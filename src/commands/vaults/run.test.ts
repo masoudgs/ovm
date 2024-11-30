@@ -1,21 +1,19 @@
 import { expect } from 'chai'
-import { tmpdir } from 'os'
 import { createDefaultConfig } from '../../providers/config'
 import {
   createTmpVault,
   destroyConfigMockFile,
-  getTmpConfigFilePath,
+  testVaultName,
+  testVaultPath,
+  tmpConfigFilePath,
 } from '../../utils/testing'
 import { action } from './run'
-
-const tmpConfigFilePath = getTmpConfigFilePath()
-const vaultPath = tmpdir() + '/test'
 
 describe('Command: run', () => {
   beforeEach(async () => {
     await destroyConfigMockFile(tmpConfigFilePath)
     await createDefaultConfig(tmpConfigFilePath)
-    await createTmpVault(vaultPath)
+    await createTmpVault(testVaultPath)
   })
 
   afterEach(async () => {
@@ -32,7 +30,7 @@ describe('Command: run', () => {
           config: tmpConfigFilePath,
           debug: false,
           timestamp: false,
-          path: vaultPath,
+          path: testVaultPath,
           runFromVaultDirectoryAsWorkDir: false,
         },
       )
@@ -41,20 +39,20 @@ describe('Command: run', () => {
     }
   })
 
-  it('should echo path of vault by echo command and reserved placeholder {0}', async () => {
+  it('should echo path and name of vault by echo command and reserved placeholder {0} {1}', async () => {
     await action(
       {
-        command: "echo 'Path: {0}'",
+        command: "echo 'Path: {0} {1}'",
       },
       {
         config: tmpConfigFilePath,
         debug: false,
         timestamp: false,
-        path: vaultPath,
+        path: testVaultPath,
         runFromVaultDirectoryAsWorkDir: false,
       },
       async (result) => {
-        const expected = `Path: ${vaultPath}`
+        const expected = `Path: ${testVaultPath} ${testVaultName}`
         expect(result.toString().trim()).to.match(new RegExp(expected))
       },
     )
