@@ -1,8 +1,8 @@
+import { runCommand } from '@oclif/test'
 import { expect } from 'chai'
 import {
   destroyConfigMockFile,
   getTmpConfigFilePath,
-  runCommand,
 } from '../../utils/testing'
 
 const tmpConfigFilePath = getTmpConfigFilePath()
