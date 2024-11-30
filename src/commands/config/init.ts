@@ -1,8 +1,8 @@
 import { flush } from '@oclif/core'
 import { ArgInput } from '@oclif/core/lib/parser'
-import { FactoryFlags, InitFlags } from '../../commands'
 import { FactoryCommand } from '../../providers/command'
 import { createDefaultConfig, safeLoadConfig } from '../../providers/config'
+import { FactoryFlags, InitFlags } from '../../types/commands'
 
 /**
  * Init command configure an ovm.json config file in user's home dir.

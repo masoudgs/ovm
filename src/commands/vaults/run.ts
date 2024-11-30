@@ -1,39 +1,25 @@
 import { Args, Flags, flush, handle } from '@oclif/core'
 import { each, eachSeries, ErrorCallback } from 'async'
-import { exec, ExecException } from 'child_process'
+import { exec } from 'child_process'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { Vault } from 'obsidian-utils'
-import {
-  CommandsExecutedOnVaults,
-  FactoryFlagsWithVaults,
-} from '../../commands'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { safeLoadConfig } from '../../providers/config'
 import { vaultsSelector } from '../../providers/vaults'
+import {
+  CommandArgs,
+  CommandsExecutedOnVaults,
+  CommandVault,
+  ExecuteCustomCommandResult,
+  FactoryFlagsWithVaults,
+  RunFlags,
+} from '../../types/commands'
 import { RESERVED_VARIABLES } from '../../utils/constants'
 import {
   CUSTOM_COMMAND_LOGGER_FILE,
   customCommandLogger,
   logger,
 } from '../../utils/logger'
-
-interface CommandArgs {
-  [key: string]: string
-}
-
-interface RunFlags {
-  output: string
-  unescape: boolean
-  async: boolean
-  silent: boolean
-  runFromVaultDirectoryAsWorkDir: boolean
-}
-
-interface ExecuteCustomCommandResult {
-  stdout: string
-  stderr: string
-  error: ExecException | null
-}
 
 export default class Run extends FactoryCommandWithVaults {
   static readonly aliases = ['r', 'run', 'vr', 'vaults run']
@@ -112,7 +98,6 @@ export default class Run extends FactoryCommandWithVaults {
     args: CommandArgs,
     flags: FactoryFlagsWithVaults<RunFlags>,
   ): Promise<void> {
-    const { command } = args
     const { path, output } = flags
     const { success: loadConfigSuccess, error: loadConfigError } =
       await safeLoadConfig(flags.config)
@@ -125,15 +110,12 @@ export default class Run extends FactoryCommandWithVaults {
     const selectedVaults = await vaultsSelector(vaults)
     const vaultsWithCommand = selectedVaults.map((vault: Vault) => ({
       vault,
-      command: this.commandInterpolation(vault, command),
+      command: this.commandInterpolation(vault, args.command),
     }))
 
     const taskExecutedOnVaults: CommandsExecutedOnVaults = {}
 
-    const commandVaultIterator = async (opts: {
-      vault: Vault
-      command: CommandArgs['command']
-    }) => {
+    const commandVaultIterator = async (opts: CommandVault) => {
       const { vault, command } = opts
       logger.debug(`Execute command`, { vault, command })
 

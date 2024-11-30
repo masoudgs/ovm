@@ -2,7 +2,7 @@ import { ExitPromptError } from '@inquirer/core'
 import { Command, Flags, handle } from '@oclif/core'
 import { ParserInput } from '@oclif/core/lib/interfaces/parser'
 import { Vault } from 'obsidian-utils'
-import { FactoryFlags, FactoryFlagsWithVaults } from '../commands'
+import { FactoryFlags, FactoryFlagsWithVaults } from '../types/commands'
 import {
   DEFAULT_CONFIG_PATH,
   VAULTS_PATH_FLAG_DESCRIPTION,

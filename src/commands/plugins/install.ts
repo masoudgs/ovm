@@ -5,11 +5,6 @@ import {
   isPluginInstalled,
   Vault,
 } from 'obsidian-utils'
-import {
-  FactoryFlagsWithVaults,
-  InstallArgs,
-  InstallFlags,
-} from '../../commands'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { Config, safeLoadConfig, writeConfig } from '../../providers/config'
 import {
@@ -18,6 +13,11 @@ import {
 } from '../../providers/github'
 import { modifyCommunityPlugins } from '../../providers/plugins'
 import { vaultsSelector } from '../../providers/vaults'
+import {
+  FactoryFlagsWithVaults,
+  InstallArgs,
+  InstallFlags,
+} from '../../types/commands'
 import { PluginNotFoundInRegistryError } from '../../utils/errors'
 import { logger } from '../../utils/logger'
 

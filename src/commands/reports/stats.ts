@@ -12,17 +12,13 @@ import {
 } from 'obsidian-utils'
 import { join } from 'path'
 import { promisify } from 'util'
-import { FactoryFlagsWithVaults } from '../../commands'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { Config, safeLoadConfig } from '../../providers/config'
 import { InstalledPlugins } from '../../providers/plugins'
 import { vaultsSelector } from '../../providers/vaults'
+import { FactoryFlagsWithVaults, StatsFlags } from '../../types/commands'
 import { VAULTS_PATH_FLAG_DESCRIPTION } from '../../utils/constants'
 import { logger } from '../../utils/logger'
-interface StatsFlags {
-  path: string
-  output: string
-}
 
 export default class Stats extends FactoryCommandWithVaults {
   static readonly aliases = ['rs', 'reports stats']

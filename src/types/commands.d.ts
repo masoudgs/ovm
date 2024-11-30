@@ -1,5 +1,6 @@
+import { ExecException } from 'child_process'
 import { Vault } from 'obsidian-utils'
-import { Config } from './providers/config'
+import { Config } from '../providers/config'
 
 export type CommonFlags = {
   debug: boolean
@@ -14,6 +15,19 @@ export type CommonFlagsWithPath = CommonFlags & {
 export type FactoryFlags<T> = CommonFlags & T
 
 export type FactoryFlagsWithVaults<T> = CommonFlagsWithPath & T
+
+export type CommandsExecutedOnVaults = Record<
+  string,
+  {
+    success: null | boolean
+    duration: string
+    error: null | Error | string
+  }
+>
+export type CommandOnVault = (_vault: Vault, ..._args: string[]) => string
+export type ReservedVariables = {
+  [key: string]: CommandOnVault | undefined
+}
 
 export type InitFlags = Record<string, unknown>
 
@@ -48,11 +62,29 @@ export interface UninstallPluginVaultOpts {
   config: Config
 }
 
-export type CommandsExecutedOnVaults = Record<
-  string,
-  {
-    success: null | boolean
-    duration: string
-    error: null | Error | string
-  }
->
+export interface StatsFlags {
+  output: string
+}
+
+export interface RunFlags {
+  output: string
+  unescape: boolean
+  async: boolean
+  silent: boolean
+  runFromVaultDirectoryAsWorkDir: boolean
+}
+
+export interface CommandArgs {
+  [key: string]: string
+}
+
+export interface ExecuteCustomCommandResult {
+  stdout: string
+  stderr: string
+  error: ExecException | null
+}
+
+export interface CommandVault {
+  vault: Vault
+  command: CommandArgs['command']
+}

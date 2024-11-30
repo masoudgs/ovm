@@ -1,15 +1,15 @@
 import { Args, flush, handle } from '@oclif/core'
 import { eachSeries } from 'async'
 import { isPluginInstalled, Vault } from 'obsidian-utils'
-import {
-  FactoryFlagsWithVaults,
-  UninstallArgs,
-  UninstallFlags,
-} from '../../commands'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { Plugin, safeLoadConfig } from '../../providers/config'
 import { pluginsSelector, removePluginDir } from '../../providers/plugins'
 import { vaultsSelector } from '../../providers/vaults'
+import {
+  FactoryFlagsWithVaults,
+  UninstallArgs,
+  UninstallFlags,
+} from '../../types/commands'
 import { logger } from '../../utils/logger'
 
 /**

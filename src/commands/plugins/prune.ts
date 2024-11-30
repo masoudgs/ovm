@@ -1,15 +1,15 @@
 import { flush, handle } from '@oclif/core'
 import { ArgInput } from '@oclif/core/lib/parser'
 import { eachSeries } from 'async'
-import {
-  FactoryFlagsWithVaults,
-  PruneFlags,
-  PrunePluginVaultOpts,
-} from '../../commands'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { safeLoadConfig } from '../../providers/config'
 import { listInstalledPlugins, removePluginDir } from '../../providers/plugins'
 import { vaultsSelector } from '../../providers/vaults'
+import {
+  FactoryFlagsWithVaults,
+  PruneFlags,
+  PrunePluginVaultOpts,
+} from '../../types/commands'
 import { logger } from '../../utils/logger'
 
 /**
