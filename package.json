@@ -21,7 +21,7 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest && pnpm run build:release && pnpm run test:unit",
-    "test:unit": "pnpm run build && mocha",
+    "test:unit": "mocha",
     "test:coverage": "nyc npm run test:unit"
   },
   "keywords": [
@@ -94,6 +94,7 @@
     "chai": "^5.1.1",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-chai-friendly": "^1.0.1",
     "globals": "^15.9.0",
     "mocha": "^10.7.3",
     "mock-fs": "^5.2.0",
@@ -110,7 +111,9 @@
   },
   "pnpm": {
     "overrides": {
-      "fast-xml-parser@<4.4.1": ">=4.4.1"
+      "fast-xml-parser@<4.4.1": ">=4.4.1",
+      "ajv@<8.0.0": ">=8.17.1",
+      "whatwg-url@<6.0.0": ">=14.0.0"
     }
   }
 }
