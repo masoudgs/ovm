@@ -17,7 +17,6 @@ import { Config, safeLoadConfig } from '../../providers/config'
 import { InstalledPlugins } from '../../providers/plugins'
 import { loadVaults, vaultsSelector } from '../../providers/vaults'
 import { FactoryFlagsWithVaults, StatsFlags } from '../../types/commands'
-import { VAULTS_PATH_FLAG_DESCRIPTION } from '../../utils/constants'
 import { logger } from '../../utils/logger'
 
 export default class Stats extends FactoryCommandWithVaults {
@@ -29,11 +28,6 @@ export default class Stats extends FactoryCommandWithVaults {
     '<%= config.bin %> <%= command.id %> --path=/path/to/vaults/**/.obsidian',
   ]
   static override readonly flags = {
-    path: Flags.string({
-      char: 'p',
-      description: VAULTS_PATH_FLAG_DESCRIPTION,
-      default: '',
-    }),
     output: Flags.string({
       char: 'o',
       description: 'Display the output with a specific transformer.',

@@ -3,11 +3,7 @@ import { Command, Flags, handle } from '@oclif/core'
 import { ParserInput } from '@oclif/core/lib/interfaces/parser'
 import { exec } from 'child_process'
 import { Vault } from 'obsidian-utils'
-import {
-  ExecuteCustomCommandResult,
-  FactoryFlags,
-  FactoryFlagsWithVaults,
-} from '../types/commands'
+import { ExecuteCustomCommandResult, FactoryFlags, FactoryFlagsWithVaults } from '../types/commands'
 import {
   DEFAULT_CONFIG_PATH,
   RESERVED_VARIABLES,
@@ -81,7 +77,7 @@ class FactoryCommand extends Command {
   }
 }
 
-class FactoryCommandWithVaults extends FactoryCommand {
+class FactoryCommandWithVaults extends Command {
   static readonly commonFlagsWithPath = {
     ...FactoryCommand.commonFlags,
     path: Flags.string({
@@ -89,6 +85,26 @@ class FactoryCommandWithVaults extends FactoryCommand {
       description: VAULTS_PATH_FLAG_DESCRIPTION,
       default: '',
     }),
+  }
+
+  static readonly commonFlags = FactoryCommandWithVaults.commonFlagsWithPath
+
+  run(): Promise<unknown> {
+    throw new Error('Method not implemented.')
+  }
+
+  public enableLoggingTimestamp(timestamp: boolean): void {
+    process.env.OVM_ENABLE_LOG_TIMESTAMP = timestamp ? '0' : '1'
+  }
+
+  public enableDebugLogLevel(
+    debug: boolean,
+    flags: ParserInput['flags'],
+  ): void {
+    if (debug) {
+      logger.level = 'debug'
+      logger.debug(`Command called`, { flags })
+    }
   }
 
   public flagsInterceptor<T>(
@@ -100,6 +116,18 @@ class FactoryCommandWithVaults extends FactoryCommand {
     this.enableDebugLogLevel(debug, flags as ParserInput['flags'])
 
     return flags
+  }
+
+  public handleError(error: unknown) {
+    if (process.env.CI) {
+      throw error
+    }
+    if (error instanceof ExitPromptError) {
+      logger.debug('Exit prompt error:', { error })
+    } else if (error instanceof Error) {
+      logger.debug('An error occurred while installation:', { error })
+      handle(error)
+    }
   }
 }
 
