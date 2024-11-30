@@ -1,8 +1,9 @@
 import { checkbox } from '@inquirer/prompts'
 import { glob } from 'glob'
 import { findVault, Vault } from 'obsidian-utils'
-import path from 'path'
+import { basename, dirname } from 'path'
 import { logger } from '../utils/logger'
+import { isTestEnv } from '../utils/testing'
 
 export const findVaultsByPatternMatching = async (pathPattern: string) => {
   if (!pathPattern.endsWith('.obsidian')) {
@@ -20,8 +21,8 @@ export const findVaultsByPatternMatching = async (pathPattern: string) => {
   for await (const [vault] of vaultsQueryPromises) {
     detectedVaults.push({
       ...vault,
-      name: path.basename(path.dirname(vault.path)),
-      path: path.dirname(vault.path),
+      name: basename(dirname(vault.path)),
+      path: dirname(vault.path),
     })
   }
 
@@ -38,6 +39,11 @@ export const vaultsSelector = async (vaults: Vault[]) => {
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
 
+  if (isTestEnv()) {
+    const [{ value: testVault }] = choices
+    return [testVault]
+  }
+
   const selectedVaults = await checkbox({
     choices,
     message: 'Select the vaults:',
@@ -53,3 +59,30 @@ export const vaultsSelector = async (vaults: Vault[]) => {
 
 export const getVaultPath = (vault: Vault) => vault.path
 export const getVaultName = (vault: Vault) => vault.name
+
+/**
+ * Loads vaults based on the specified path or from the configuration.
+ * If a path is specified, it will find vaults by pattern matching.
+ * If no path is specified, it will find vaults from the Obsidian configuration.
+ * Throws an error if no vaults are found.
+ *
+ * @param path - The path to search for vaults.
+ * @returns A promise that resolves to an array of Vault objects.
+ * @throws An error if no vaults are found.
+ */
+export const loadVaults = async (path: string): Promise<Vault[]> => {
+  const isPathSpecifiedAndValid = path && path.trim().length > 0
+  let vaults: Vault[] = []
+
+  if (isPathSpecifiedAndValid) {
+    vaults = await findVaultsByPatternMatching(path)
+  } else {
+    vaults = await findVaultsFromConfig()
+  }
+
+  if (vaults.length === 0) {
+    throw new Error(`No vaults found!`)
+  }
+
+  return vaults
+}

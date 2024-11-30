@@ -1,11 +1,14 @@
 import { Args, Flags, flush, handle } from '@oclif/core'
 import { each, eachSeries, ErrorCallback } from 'async'
-import { exec } from 'child_process'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { Vault } from 'obsidian-utils'
-import { FactoryCommandWithVaults } from '../../providers/command'
+import {
+  asyncExecCustomCommand,
+  commandInterpolation,
+  FactoryCommandWithVaults,
+} from '../../providers/command'
 import { safeLoadConfig } from '../../providers/config'
-import { vaultsSelector } from '../../providers/vaults'
+import { loadVaults, vaultsSelector } from '../../providers/vaults'
 import {
   CommandArgs,
   CommandsExecutedOnVaults,
@@ -14,12 +17,160 @@ import {
   FactoryFlagsWithVaults,
   RunFlags,
 } from '../../types/commands'
-import { RESERVED_VARIABLES } from '../../utils/constants'
 import {
   CUSTOM_COMMAND_LOGGER_FILE,
   customCommandLogger,
   logger,
 } from '../../utils/logger'
+
+export const action = async (
+  args: CommandArgs,
+  flags: FactoryFlagsWithVaults<RunFlags>,
+  iterator?: (result: string | ExecuteCustomCommandResult) => Promise<void>,
+  errorCallback?: ErrorCallback<Error>,
+) => {
+  const { path, output } = flags
+  const { success: loadConfigSuccess, error: loadConfigError } =
+    await safeLoadConfig(flags.config)
+  if (!loadConfigSuccess) {
+    logger.error('Failed to load config', { error: loadConfigError })
+    process.exit(1)
+  }
+
+  if (!args.command || args.command === '') {
+    customCommandLogger.error('Command is empty', {
+      command: args.command,
+    })
+    const emptyCommandError = new Error('Command is empty')
+    throw emptyCommandError
+  }
+
+  const vaults = await loadVaults(path)
+  const selectedVaults = await vaultsSelector(vaults)
+  const vaultsWithCommand = selectedVaults.map((vault: Vault) => ({
+    vault,
+    command: commandInterpolation(vault, args.command),
+  }))
+
+  const taskExecutedOnVaults: CommandsExecutedOnVaults = {}
+
+  const commandVaultIterator = async (opts: CommandVault) => {
+    const { vault, command } = opts
+
+    logger.debug(`Execute command`, { vault, command })
+
+    try {
+      const startDate = new Date()
+      const result = await asyncExecCustomCommand(
+        command,
+        flags.runFromVaultDirectoryAsWorkDir,
+        vault,
+      )
+      const endDate = new Date()
+      const durationLessThanSecond = endDate.getTime() - startDate.getTime()
+      const durationMoreThanSecond = intervalToDuration({
+        start: startDate,
+        end: endDate,
+      })
+
+      const formattedDuration =
+        formatDuration(durationMoreThanSecond, {
+          format: ['hours', 'minutes', 'seconds'],
+        }) || `${durationLessThanSecond.toString()} ms`
+
+      taskExecutedOnVaults[vault.name] = {
+        success: null,
+        duration: formattedDuration,
+        error: null,
+      }
+
+      if (typeof result === 'string') {
+        taskExecutedOnVaults[vault.name]['success'] = true
+        customCommandLogger.info('Executed successfully', {
+          result,
+          vault,
+          command,
+        })
+        if (!flags.silent) {
+          logger.info(`Run command`, { vault, command })
+          console.log(result)
+        }
+
+        if (iterator) {
+          iterator(result)
+        }
+      } else {
+        taskExecutedOnVaults[vault.name]['success'] = false
+        customCommandLogger.error('Execution failed', {
+          error: result.error,
+          vault,
+          command,
+        })
+        if (errorCallback) {
+          errorCallback(result.error as Error)
+        }
+      }
+    } catch (error) {
+      taskExecutedOnVaults[vault.name]['error'] = JSON.stringify(error)
+      customCommandLogger.error('Execution failed', {
+        error: JSON.stringify(error),
+        vault,
+        command,
+      })
+
+      if (errorCallback) {
+        errorCallback(error as Error)
+      }
+    }
+  }
+
+  const commandVaultErrorCallback: ErrorCallback<Error> = (
+    error: Error | null | undefined,
+  ) => {
+    if (error) {
+      logger.debug('UnhandledException', {
+        error: JSON.stringify(error),
+        path,
+      })
+      handle(error)
+      return error
+    } else {
+      const sortedTaskExecutedOnVaults = Object.entries(taskExecutedOnVaults)
+        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+        .reduce<CommandsExecutedOnVaults>((acc, [key, value]) => {
+          acc[key] = value
+          return acc
+        }, {})
+
+      logger.info('Run operation finished!', {
+        custom_commands_log_path: CUSTOM_COMMAND_LOGGER_FILE,
+      })
+
+      if (output === 'table') {
+        console.table(sortedTaskExecutedOnVaults)
+      } else if (output === 'json') {
+        console.log(JSON.stringify(sortedTaskExecutedOnVaults, null, 2))
+      }
+    }
+  }
+  customCommandLogger.debug('Running command on selected vaults...', {
+    vaults: vaultsWithCommand.length,
+  })
+
+  if (flags.async) {
+    return each(
+      vaultsWithCommand,
+      commandVaultIterator,
+      commandVaultErrorCallback,
+    )
+  } else {
+    return eachSeries(
+      vaultsWithCommand,
+      commandVaultIterator,
+      commandVaultErrorCallback,
+    )
+  }
+}
 
 export default class Run extends FactoryCommandWithVaults {
   static readonly aliases = ['r', 'run', 'vr', 'vaults run']
@@ -98,151 +249,6 @@ export default class Run extends FactoryCommandWithVaults {
     args: CommandArgs,
     flags: FactoryFlagsWithVaults<RunFlags>,
   ): Promise<void> {
-    const { path, output } = flags
-    const { success: loadConfigSuccess, error: loadConfigError } =
-      await safeLoadConfig(flags.config)
-    if (!loadConfigSuccess) {
-      logger.error('Failed to load config', { error: loadConfigError })
-      process.exit(1)
-    }
-
-    const vaults = await this.loadVaults(path)
-    const selectedVaults = await vaultsSelector(vaults)
-    const vaultsWithCommand = selectedVaults.map((vault: Vault) => ({
-      vault,
-      command: this.commandInterpolation(vault, args.command),
-    }))
-
-    const taskExecutedOnVaults: CommandsExecutedOnVaults = {}
-
-    const commandVaultIterator = async (opts: CommandVault) => {
-      const { vault, command } = opts
-      logger.debug(`Execute command`, { vault, command })
-
-      try {
-        const startDate = new Date()
-        const result = await this.asyncExecCustomCommand(
-          command,
-          flags.runFromVaultDirectoryAsWorkDir,
-          vault,
-        )
-        const endDate = new Date()
-        const durationLessThanSecond = endDate.getTime() - startDate.getTime()
-        const durationMoreThanSecond = intervalToDuration({
-          start: startDate,
-          end: endDate,
-        })
-
-        const formattedDuration =
-          formatDuration(durationMoreThanSecond, {
-            format: ['hours', 'minutes', 'seconds'],
-          }) || `${durationLessThanSecond.toString()} ms`
-
-        taskExecutedOnVaults[vault.name] = {
-          success: null,
-          duration: formattedDuration,
-          error: null,
-        }
-
-        if (result) {
-          taskExecutedOnVaults[vault.name]['success'] = true
-          customCommandLogger.info('Executed successfully', {
-            result,
-            vault,
-            command,
-          })
-          if (!flags.silent) {
-            logger.info(`Run command`, { vault, command })
-            console.log(result)
-          }
-        }
-      } catch (error) {
-        taskExecutedOnVaults[vault.name]['error'] = JSON.stringify(error)
-        customCommandLogger.error('Execution failed', {
-          error: JSON.stringify(error),
-          vault,
-          command,
-        })
-      }
-    }
-
-    const commandVaultErrorCallback: ErrorCallback<Error> = (
-      error: Error | null | undefined,
-    ) => {
-      if (error) {
-        logger.debug('UnhandledException', {
-          error: JSON.stringify(error),
-          path,
-        })
-        handle(error)
-        return error
-      } else {
-        const sortedTaskExecutedOnVaults = Object.entries(taskExecutedOnVaults)
-          .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-          .reduce<CommandsExecutedOnVaults>((acc, [key, value]) => {
-            acc[key] = value
-            return acc
-          }, {})
-
-        logger.info('Run operation finished!', {
-          custom_commands_log_path: CUSTOM_COMMAND_LOGGER_FILE,
-        })
-
-        if (output === 'table') {
-          console.table(sortedTaskExecutedOnVaults)
-        } else if (output === 'json') {
-          console.log(JSON.stringify(sortedTaskExecutedOnVaults, null, 2))
-        }
-      }
-    }
-    customCommandLogger.debug('Running command on selected vaults...', {
-      vaults: vaultsWithCommand.length,
-    })
-
-    if (flags.async) {
-      each(vaultsWithCommand, commandVaultIterator, commandVaultErrorCallback)
-    } else {
-      eachSeries(
-        vaultsWithCommand,
-        commandVaultIterator,
-        commandVaultErrorCallback,
-      )
-    }
-  }
-
-  private async asyncExecCustomCommand(
-    command: string,
-    runFromVaultDirectoryAsWorkDir: boolean,
-    vault: Vault,
-  ): Promise<Pick<ExecuteCustomCommandResult, 'error'> | string> {
-    return new Promise((resolve, reject) => {
-      exec(
-        command,
-        { cwd: runFromVaultDirectoryAsWorkDir ? vault.path : __dirname },
-        (error, stdout, stderr) => {
-          if (error) {
-            reject(error)
-            return
-          }
-          resolve(`${stderr}\n${stdout}`)
-        },
-      )
-    })
-  }
-
-  private commandInterpolation(vault: Vault, command: string): string {
-    const variableRegex = /\{(\d*?)}/g
-    const replacer = (match: string, variable: string) => {
-      const variableFunction = RESERVED_VARIABLES[variable]
-
-      if (variableFunction) {
-        return variableFunction(vault)
-      } else {
-        return match
-      }
-    }
-    const interpolatedCommand = command.replace(variableRegex, replacer)
-
-    return interpolatedCommand
+    await action(args, flags)
   }
 }

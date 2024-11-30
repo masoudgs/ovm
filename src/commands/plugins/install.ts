@@ -12,7 +12,7 @@ import {
   handleExceedRateLimitError,
 } from '../../providers/github'
 import { modifyCommunityPlugins } from '../../providers/plugins'
-import { vaultsSelector } from '../../providers/vaults'
+import { loadVaults, vaultsSelector } from '../../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   InstallArgs,
@@ -87,7 +87,7 @@ export default class Install extends FactoryCommandWithVaults {
       process.exit(1)
     }
 
-    const vaults = await this.loadVaults(path)
+    const vaults = await loadVaults(path)
     const selectedVaults = await vaultsSelector(vaults)
 
     // Check if pluginId is provided and install only that plugin

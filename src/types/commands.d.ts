@@ -67,10 +67,10 @@ export interface StatsFlags {
 }
 
 export interface RunFlags {
-  output: string
-  unescape: boolean
-  async: boolean
-  silent: boolean
+  output?: string
+  unescape?: boolean
+  async?: boolean
+  silent?: boolean
   runFromVaultDirectoryAsWorkDir: boolean
 }
 

@@ -15,7 +15,7 @@ import { promisify } from 'util'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { Config, safeLoadConfig } from '../../providers/config'
 import { InstalledPlugins } from '../../providers/plugins'
-import { vaultsSelector } from '../../providers/vaults'
+import { loadVaults, vaultsSelector } from '../../providers/vaults'
 import { FactoryFlagsWithVaults, StatsFlags } from '../../types/commands'
 import { VAULTS_PATH_FLAG_DESCRIPTION } from '../../utils/constants'
 import { logger } from '../../utils/logger'
@@ -81,7 +81,7 @@ export default class Stats extends FactoryCommandWithVaults {
       process.exit(1)
     }
 
-    const vaults = await this.loadVaults(path)
+    const vaults = await loadVaults(path)
     const selectedVaults = await vaultsSelector(vaults)
     const vaultsWithConfig = selectedVaults.map((vault) => ({ vault, config }))
 

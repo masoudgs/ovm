@@ -1,14 +1,19 @@
 import { ExitPromptError } from '@inquirer/core'
 import { Command, Flags, handle } from '@oclif/core'
 import { ParserInput } from '@oclif/core/lib/interfaces/parser'
+import { exec } from 'child_process'
 import { Vault } from 'obsidian-utils'
-import { FactoryFlags, FactoryFlagsWithVaults } from '../types/commands'
+import {
+  ExecuteCustomCommandResult,
+  FactoryFlags,
+  FactoryFlagsWithVaults,
+} from '../types/commands'
 import {
   DEFAULT_CONFIG_PATH,
+  RESERVED_VARIABLES,
   VAULTS_PATH_FLAG_DESCRIPTION,
 } from '../utils/constants'
 import { logger } from '../utils/logger'
-import { findVaultsByPatternMatching, findVaultsFromConfig } from './vaults'
 
 const commonFlags = {
   debug: Flags.boolean({
@@ -63,33 +68,6 @@ class FactoryCommand extends Command {
     return flags
   }
 
-  /**
-   * Loads vaults based on the specified path or from the configuration.
-   * If a path is specified, it will find vaults by pattern matching.
-   * If no path is specified, it will find vaults from the Obsidian configuration.
-   * Throws an error if no vaults are found.
-   *
-   * @param path - The path to search for vaults.
-   * @returns A promise that resolves to an array of Vault objects.
-   * @throws An error if no vaults are found.
-   */
-  public async loadVaults(path: string): Promise<Vault[]> {
-    const isPathSpecifiedAndValid = path && path.trim().length > 0
-    let vaults: Vault[] = []
-
-    if (isPathSpecifiedAndValid) {
-      vaults = await findVaultsByPatternMatching(path)
-    } else {
-      vaults = await findVaultsFromConfig()
-    }
-
-    if (vaults.length === 0) {
-      throw new Error(`No vaults found!`)
-    }
-
-    return vaults
-  }
-
   public handleError(error: unknown) {
     if (process.env.CI) {
       throw error
@@ -125,4 +103,45 @@ class FactoryCommandWithVaults extends FactoryCommand {
   }
 }
 
-export { FactoryCommand, FactoryCommandWithVaults }
+const commandInterpolation = (vault: Vault, command: string): string => {
+  const variableRegex = /\{(\d*?)}/g
+  const replacer = (match: string, variable: string) => {
+    const variableFunction = RESERVED_VARIABLES[variable]
+
+    if (variableFunction) {
+      return variableFunction(vault)
+    } else {
+      return match
+    }
+  }
+  const interpolatedCommand = command.replace(variableRegex, replacer)
+
+  return interpolatedCommand
+}
+
+const asyncExecCustomCommand = async (
+  command: string,
+  runFromVaultDirectoryAsWorkDir: boolean,
+  vault: Vault,
+): Promise<Pick<ExecuteCustomCommandResult, 'error'> | string> => {
+  return new Promise((resolve, reject) => {
+    exec(
+      command,
+      { cwd: runFromVaultDirectoryAsWorkDir ? vault.path : __dirname },
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(error)
+        }
+        resolve(`${stderr}\n${stdout}`)
+      },
+    )
+  })
+}
+
+export {
+  asyncExecCustomCommand,
+  commandInterpolation,
+  FactoryCommand,
+  FactoryCommandWithVaults
+}
+

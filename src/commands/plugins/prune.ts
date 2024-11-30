@@ -4,7 +4,7 @@ import { eachSeries } from 'async'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { safeLoadConfig } from '../../providers/config'
 import { listInstalledPlugins, removePluginDir } from '../../providers/plugins'
-import { vaultsSelector } from '../../providers/vaults'
+import { loadVaults, vaultsSelector } from '../../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   PruneFlags,
@@ -66,7 +66,7 @@ export default class Prune extends FactoryCommandWithVaults {
       process.exit(1)
     }
 
-    const vaults = await this.loadVaults(path)
+    const vaults = await loadVaults(path)
     const selectedVaults = await vaultsSelector(vaults)
     const vaultsWithConfig = selectedVaults.map((vault) => ({ vault, config }))
     const prunePluginsIterator = async (opts: PrunePluginVaultOpts) => {
