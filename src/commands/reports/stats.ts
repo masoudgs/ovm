@@ -12,7 +12,8 @@ import {
 } from 'obsidian-utils'
 import { join } from 'path'
 import { promisify } from 'util'
-import FactoryCommand, { FactoryFlags } from '../../providers/command'
+import { FactoryFlagsWithVaults } from '../../commands'
+import { FactoryCommandWithVaults } from '../../providers/command'
 import { Config, safeLoadConfig } from '../../providers/config'
 import { InstalledPlugins } from '../../providers/plugins'
 import { vaultsSelector } from '../../providers/vaults'
@@ -23,7 +24,7 @@ interface StatsFlags {
   output: string
 }
 
-export default class Stats extends FactoryCommand {
+export default class Stats extends FactoryCommandWithVaults {
   static readonly aliases = ['rs', 'reports stats']
   static override readonly description = `Statistics of vaults and installed plugins.`
   static override readonly examples = [
@@ -66,12 +67,12 @@ export default class Stats extends FactoryCommand {
    * Main action method for the command.
    * Loads vaults, selects vaults, and gets stats about number of vaults and installed plugins per vault.
    * @param {ArgInput} args - The arguments passed to the command.
-   * @param {FactoryFlags<StatsFlags>} flags - The flags passed to the command.
+   * @param {FactoryFlagsWithVaults<StatsFlags>} flags - The flags passed to the command.
    * @returns {Promise<void>}
    */
   private async action(
     args: ArgInput,
-    flags: FactoryFlags<StatsFlags>,
+    flags: FactoryFlagsWithVaults<StatsFlags>,
   ): Promise<void> {
     const { path, output } = flags
     const {

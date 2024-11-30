@@ -1,46 +1,55 @@
 import { ExitPromptError } from '@inquirer/core'
 import { Command, Flags, handle } from '@oclif/core'
+import { ParserInput } from '@oclif/core/lib/interfaces/parser'
 import { Vault } from 'obsidian-utils'
-import { DEFAULT_CONFIG_PATH } from '../utils/constants'
+import { FactoryFlags, FactoryFlagsWithVaults } from '../commands'
+import { DEFAULT_CONFIG_PATH, VAULTS_PATH_FLAG_DESCRIPTION } from '../utils/constants'
 import { logger } from '../utils/logger'
 import { findVaultsByPatternMatching, findVaultsFromConfig } from './vaults'
 
-export type CommonFlags = {
-  debug: boolean
-  timestamp: boolean
-  config: string
+const commonFlags = {
+  debug: Flags.boolean({
+    char: 'd',
+    default: false,
+    description: 'Enable debugging mode.',
+  }),
+  timestamp: Flags.boolean({
+    char: 't',
+    default: false,
+    description: 'Enable timestamp in logs.',
+  }),
+  config: Flags.file({
+    char: 'c',
+    description: `Path to the config file.`,
+    default: DEFAULT_CONFIG_PATH,
+    required: false,
+  }),
 }
 
-export type FactoryFlags<T> = T & CommonFlags
 
-export default class FactoryCommand extends Command {
-  static readonly commonFlags = {
-    debug: Flags.boolean({
-      char: 'd',
-      default: false,
-      description: 'Enable debugging mode.',
-    }),
-    timestamp: Flags.boolean({
-      char: 't',
-      default: false,
-      description: 'Enable timestamp in logs.',
-    }),
-    config: Flags.file({
-      char: 'c',
-      description: `Path to the config file.`,
-      default: DEFAULT_CONFIG_PATH,
-      required: false,
-    }),
-  }
+class FactoryCommand extends Command {
+  static readonly commonFlags = commonFlags
 
   run(): Promise<unknown> {
     throw new Error('Method not implemented.')
   }
 
+  public enableLoggingTimestamp(timestamp: boolean): void {
+    process.env.OVM_ENABLE_LOG_TIMESTAMP = timestamp ? '0' : '1'
+  }
+
+  public enableDebugLogLevel(debug: boolean, flags: ParserInput['flags']): void {
+
+    if (debug) {
+      logger.level = 'debug'
+      logger.debug(`Command called`, { flags })
+    }
+  }
+
   public flagsInterceptor<T>(flags: FactoryFlags<T>): FactoryFlags<T> {
     const { debug, timestamp } = flags
 
-    process.env.OVM_ENABLE_LOG_TIMESTAMP = timestamp ? 'true' : 'false'
+    this.enableLoggingTimestamp(timestamp)
 
     if (debug) {
       logger.level = 'debug'
@@ -78,10 +87,10 @@ export default class FactoryCommand extends Command {
   }
 
   public handleError(error: unknown) {
-    // Avoid handling errors by logger for CI environment
     if (process.env.CI) {
       throw error
-    } else if (error instanceof ExitPromptError) {
+    }
+    if (error instanceof ExitPromptError) {
       logger.debug('Exit prompt error:', { error })
     } else if (error instanceof Error) {
       logger.debug('An error occurred while installation:', { error })
@@ -89,3 +98,26 @@ export default class FactoryCommand extends Command {
     }
   }
 }
+
+class FactoryCommandWithVaults extends FactoryCommand {
+  static readonly commonFlagsWithPath = {
+    ...FactoryCommand.commonFlags,
+    path: Flags.string({
+      char: 'p',
+      description: VAULTS_PATH_FLAG_DESCRIPTION,
+      default: '',
+    }),
+  }
+
+  public flagsInterceptor<T>(flags: FactoryFlagsWithVaults<T>): FactoryFlagsWithVaults<T> {
+    const { debug, timestamp } = flags
+
+    this.enableLoggingTimestamp(timestamp)
+    this.enableDebugLogLevel(debug, flags as ParserInput['flags'])
+
+    return flags
+  }
+}
+
+
+export { FactoryCommand, FactoryCommandWithVaults }

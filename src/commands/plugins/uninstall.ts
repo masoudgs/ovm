@@ -1,18 +1,17 @@
-import { Args, Flags, flush, handle } from '@oclif/core'
+import { Args, flush, handle } from '@oclif/core'
 import { eachSeries } from 'async'
 import { isPluginInstalled, Vault } from 'obsidian-utils'
-import { UninstallArgs, UninstallFlags } from '../../commands'
-import FactoryCommand, { FactoryFlags } from '../../providers/command'
+import { FactoryFlagsWithVaults, UninstallArgs, UninstallFlags } from '../../commands'
+import { FactoryCommandWithVaults } from '../../providers/command'
 import { Plugin, safeLoadConfig } from '../../providers/config'
 import { pluginsSelector, removePluginDir } from '../../providers/plugins'
 import { vaultsSelector } from '../../providers/vaults'
-import { VAULTS_PATH_FLAG_DESCRIPTION } from '../../utils/constants'
 import { logger } from '../../utils/logger'
 
 /**
  * Uninstall command removes specified plugins from vaults.
  */
-export default class Uninstall extends FactoryCommand {
+export default class Uninstall extends FactoryCommandWithVaults {
   static readonly aliases = ['pu', 'plugins uninstall']
   static override readonly description = `Uninstall plugin(s) from vaults.`
   static override readonly examples = [
@@ -22,12 +21,7 @@ export default class Uninstall extends FactoryCommand {
     '<%= config.bin %> <%= command.id %> id',
   ]
   static override readonly flags = {
-    path: Flags.string({
-      char: 'p',
-      description: VAULTS_PATH_FLAG_DESCRIPTION,
-      default: '',
-    }),
-    ...this.commonFlags,
+    ...this.commonFlagsWithPath,
   }
   static override readonly args = {
     pluginId: Args.string({
@@ -56,12 +50,12 @@ export default class Uninstall extends FactoryCommand {
    * Main action method for the command.
    * Loads vaults, selects vaults, and uninstall specified plugins.
    * @param {UninstallArgs} args - The arguments passed to the command.
-   * @param {FactoryFlags} flags - The flags passed to the command.
+   * @param {FactoryFlagsWithVaults<UninstallFlags>} flags - The flags passed to the command.
    * @returns {Promise<void>}
    */
   private async action(
     args: UninstallArgs,
-    flags: FactoryFlags<UninstallFlags>,
+    flags: FactoryFlagsWithVaults<UninstallFlags>,
   ): Promise<void> {
     const { path } = flags
     const {

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const pluginJs = require('@eslint/js')
+const eslint = require('@eslint/js')
 const globals = require('globals')
-const tsEslint = require('typescript-eslint')
+const tseslint = require('typescript-eslint')
 
 const rulesConfig = [
   {
@@ -23,7 +23,7 @@ const rulesConfig = [
   },
 ]
 
-const ignoresConfig = [{ignores: ['dist', 'bin', 'eslint.config.cjs']}]
+const ignoresConfig = [{ignores: ['dist', 'bin', 'eslint.config.cjs', 'coverage']}]
 
 module.exports = [
   {files: ['**/*.{ts}', '**/*.test.ts', '**/*.spec.ts']},
@@ -36,8 +36,16 @@ module.exports = [
       },
     },
   },
-  pluginJs.configs.recommended,
-  ...tsEslint.configs.recommended,
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
   ...rulesConfig,
   ...ignoresConfig,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
+  },
 ]

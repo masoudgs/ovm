@@ -1,9 +1,23 @@
 import { Vault } from 'obsidian-utils'
 import { Config } from './providers/config'
 
-export interface PruneFlags {
+export type CommonFlags = {
+  debug: boolean
+  timestamp: boolean
+  config: string
+}
+
+export type CommonFlagsWithPath = CommonFlags & {
   path: string
 }
+
+export type FactoryFlags<T> = CommonFlags & T
+
+export type FactoryFlagsWithVaults<T> = CommonFlagsWithPath & T
+
+export type InitFlags = Record<string, unknown>
+
+export type PruneFlags = Record<string, unknown>
 
 export interface PrunePluginVaultOpts {
   vault: Vault
@@ -11,7 +25,6 @@ export interface PrunePluginVaultOpts {
 }
 
 export interface InstallFlags {
-  path: string
   enable: boolean
 }
 
@@ -28,9 +41,7 @@ export interface UninstallArgs {
   pluginId?: string
 }
 
-export interface UninstallFlags {
-  path: string
-}
+export type UninstallFlags = Record<string, unknown>
 
 export interface UninstallPluginVaultOpts {
   vault: Vault

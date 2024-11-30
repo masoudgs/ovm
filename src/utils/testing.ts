@@ -47,5 +47,5 @@ export const getTmpConfigFilePath = () => {
 }
 
 export const destroyConfigMockFile = async (path: string) => {
-  return await rm(path, { force: true })
+  await rm(path, { force: true })
 }

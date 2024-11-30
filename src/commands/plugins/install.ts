@@ -5,8 +5,8 @@ import {
   isPluginInstalled,
   Vault,
 } from 'obsidian-utils'
-import { InstallArgs, InstallFlags } from '../../commands'
-import FactoryCommand, { FactoryFlags } from '../../providers/command'
+import { FactoryFlagsWithVaults, InstallArgs, InstallFlags } from '../../commands'
+import { FactoryCommandWithVaults } from '../../providers/command'
 import { Config, safeLoadConfig, writeConfig } from '../../providers/config'
 import {
   findPluginInRegistry,
@@ -14,14 +14,13 @@ import {
 } from '../../providers/github'
 import { modifyCommunityPlugins } from '../../providers/plugins'
 import { vaultsSelector } from '../../providers/vaults'
-import { VAULTS_PATH_FLAG_DESCRIPTION } from '../../utils/constants'
 import { PluginNotFoundInRegistryError } from '../../utils/errors'
 import { logger } from '../../utils/logger'
 
 /**
  * Install command installs specified plugins in vaults.
  */
-export default class Install extends FactoryCommand {
+export default class Install extends FactoryCommandWithVaults {
   static readonly aliases = ['pi', 'plugins install']
   static override readonly description = `Install plugin(s) in specified vaults.`
   static override readonly examples = [
@@ -31,17 +30,12 @@ export default class Install extends FactoryCommand {
     '<%= config.bin %> <%= command.id %> id',
   ]
   static override readonly flags = {
-    path: Flags.string({
-      char: 'p',
-      description: VAULTS_PATH_FLAG_DESCRIPTION,
-      default: '',
-    }),
     enable: Flags.boolean({
       char: 'e',
       description: 'Enable all chosen plugins',
       default: true,
     }),
-    ...this.commonFlags,
+    ...this.commonFlagsWithPath,
   }
   static override readonly args = {
     pluginId: Args.string({
@@ -70,12 +64,12 @@ export default class Install extends FactoryCommand {
    * Main action method for the command.
    * Loads vaults, selects vaults, and install specified plugins.
    * @param {InstallArgs} args - The arguments passed to the command.
-   * @param {FactoryFlags<InstallFlags>} flags - The flags passed to the command.
+   * @param {FactoryFlagsWithVaults<InstallFlags>} flags - The flags passed to the command.
    * @returns {Promise<void>}
    */
   private async action(
     args: InstallArgs,
-    flags: FactoryFlags<InstallFlags>,
+    flags: FactoryFlagsWithVaults<InstallFlags>,
   ): Promise<void> {
     const { path, enable } = flags
     const {
@@ -104,7 +98,7 @@ export default class Install extends FactoryCommand {
   private async installPluginsInVaults(
     vaults: Vault[],
     config: Config,
-    flags: FactoryFlags<InstallFlags>,
+    flags: FactoryFlagsWithVaults<InstallFlags>,
     specific = false,
   ) {
     const installVaultIterator = async (vault: Vault) => {
@@ -139,12 +133,10 @@ export default class Install extends FactoryCommand {
           })
 
           if (flags.enable) {
-            // Enable the plugin
             await modifyCommunityPlugins(stagePlugin, vault.path, 'enable')
           }
 
           if (specific) {
-            // Add the plugin to the config
             const newPlugins = new Set([...config.plugins])
             const updatedConfig = { ...config, plugins: [...newPlugins] }
             await writeConfig(updatedConfig, flags.config)
@@ -181,7 +173,7 @@ export default class Install extends FactoryCommand {
   private async installPluginInVaults(
     vaults: Vault[],
     config: Config,
-    flags: FactoryFlags<InstallFlags>,
+    flags: FactoryFlagsWithVaults<InstallFlags>,
     pluginId: string,
   ) {
     const pluginInRegistry = await findPluginInRegistry(pluginId)

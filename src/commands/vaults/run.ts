@@ -3,13 +3,12 @@ import { each, eachSeries, ErrorCallback } from 'async'
 import { exec, ExecException } from 'child_process'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { Vault } from 'obsidian-utils'
-import { CommandsExecutedOnVaults } from '../../commands'
-import FactoryCommand, { FactoryFlags } from '../../providers/command'
+import { CommandsExecutedOnVaults, FactoryFlagsWithVaults } from '../../commands'
+import { FactoryCommandWithVaults } from '../../providers/command'
 import { safeLoadConfig } from '../../providers/config'
 import { vaultsSelector } from '../../providers/vaults'
 import {
-  RESERVED_VARIABLES,
-  VAULTS_PATH_FLAG_DESCRIPTION,
+  RESERVED_VARIABLES
 } from '../../utils/constants'
 import {
   CUSTOM_COMMAND_LOGGER_FILE,
@@ -22,7 +21,6 @@ interface CommandArgs {
 }
 
 interface RunFlags {
-  path: string
   output: string
   unescape: boolean
   async: boolean
@@ -36,7 +34,7 @@ interface ExecuteCustomCommandResult {
   error: ExecException | null
 }
 
-export default class Run extends FactoryCommand {
+export default class Run extends FactoryCommandWithVaults {
   static readonly aliases = ['r', 'run', 'vr', 'vaults run']
   static override readonly description = `Run a shell command on selected vaults (using Node.js child_process).\nDisclaimer: Any input containing shell metacharacters may be used to trigger arbitrary command execution, using of this command is at risk of command's caller.`
   static override readonly examples = [
@@ -48,11 +46,6 @@ export default class Run extends FactoryCommand {
     '<%= config.bin %> <%= command.id %> --output=json --runFromVaultDirectoryAsWorkDir=false',
   ]
   static override readonly flags = {
-    path: Flags.string({
-      char: 'p',
-      description: VAULTS_PATH_FLAG_DESCRIPTION,
-      default: '',
-    }),
     output: Flags.string({
       char: 'o',
       description: 'Display the output with a specific transformer.',
@@ -80,7 +73,7 @@ export default class Run extends FactoryCommand {
       description: 'Run the command from the vault directory as working dir.',
       default: true,
     }),
-    ...this.commonFlags,
+    ...this.commonFlagsWithPath,
   }
 
   static override readonly args = {
@@ -111,12 +104,12 @@ export default class Run extends FactoryCommand {
    * Main action method for the command.
    * Loads vaults, selects vaults, and gets stats about number of vaults and installed plugins per vault.
    * @param {ArgInput} args - The arguments passed to the command.
-   * @param {FactoryFlags<RunFlags>} flags - The flags passed to the command.
+   * @param {FactoryFlagsWithVaults<RunFlags>} flags - The flags passed to the command.
    * @returns {Promise<void>}
    */
   private async action(
     args: CommandArgs,
-    flags: FactoryFlags<RunFlags>,
+    flags: FactoryFlagsWithVaults<RunFlags>,
   ): Promise<void> {
     const { command } = args
     const { path, output } = flags
@@ -160,7 +153,7 @@ export default class Run extends FactoryCommand {
         const formattedDuration =
           formatDuration(durationMoreThanSecond, {
             format: ['hours', 'minutes', 'seconds'],
-          }) || `${durationLessThanSecond} ms`
+          }) || `${durationLessThanSecond.toString()} ms`
 
         taskExecutedOnVaults[vault.name] = {
           success: null,
@@ -203,10 +196,10 @@ export default class Run extends FactoryCommand {
       } else {
         const sortedTaskExecutedOnVaults = Object.entries(taskExecutedOnVaults)
           .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-          .reduce((acc, [key, value]) => {
+          .reduce<CommandsExecutedOnVaults>((acc, [key, value]) => {
             acc[key] = value
             return acc
-          }, {} as CommandsExecutedOnVaults)
+          }, {})
 
         logger.info('Run operation finished!', {
           custom_commands_log_path: CUSTOM_COMMAND_LOGGER_FILE,
@@ -245,7 +238,7 @@ export default class Run extends FactoryCommand {
         { cwd: runFromVaultDirectoryAsWorkDir ? vault.path : __dirname },
         (error, stdout, stderr) => {
           if (error) {
-            return reject(error)
+            reject(error); return;
           }
           resolve(`${stderr}\n${stdout}`)
         },

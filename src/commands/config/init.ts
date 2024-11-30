@@ -1,8 +1,8 @@
 import { flush } from '@oclif/core'
 import { ArgInput } from '@oclif/core/lib/parser'
-import FactoryCommand, {
-  CommonFlags,
-  FactoryFlags,
+import { FactoryFlags, InitFlags } from '../../commands'
+import {
+  FactoryCommand,
 } from '../../providers/command'
 import { createDefaultConfig, safeLoadConfig } from '../../providers/config'
 
@@ -41,7 +41,7 @@ export default class Init extends FactoryCommand {
    */
   private async action(
     args: ArgInput,
-    flags: FactoryFlags<CommonFlags>,
+    flags: FactoryFlags<InitFlags>,
   ): Promise<void> {
     try {
       const { data: config, error } = await safeLoadConfig(flags.config)
@@ -56,7 +56,7 @@ export default class Init extends FactoryCommand {
     } catch (error) {
       const typedError = error as Error
 
-      if (typedError && typedError.message === 'Config file not found') {
+      if (typedError.message === 'Config file not found') {
         try {
           await createDefaultConfig(flags.config)
         } catch (error) {
