@@ -1,17 +1,19 @@
 import { expect } from 'chai'
-import { existsSync } from 'fs'
 import {
   destroyConfigMockFile,
   getTmpConfigFilePath,
   runCommand,
 } from '../../utils/testing'
 
+const tmpConfigFilePath = getTmpConfigFilePath()
+
 describe('Command: config init', () => {
   beforeEach(async () => {
-    const tmpConfigFilePath = getTmpConfigFilePath()
-    if (tmpConfigFilePath && existsSync(tmpConfigFilePath)) {
-      await destroyConfigMockFile(tmpConfigFilePath.normalize('NFC'))
-    }
+    await destroyConfigMockFile(tmpConfigFilePath)
+  })
+
+  afterEach(async () => {
+    await destroyConfigMockFile(tmpConfigFilePath)
   })
 
   it('should create a config file', async () => {
@@ -21,6 +23,5 @@ describe('Command: config init', () => {
     expect(normalizedOutput).to.equal(
       `info: Config file created {"path":"${tmpConfigFilePath.replace(/\\\\/g, '\\')}"}`,
     )
-    await destroyConfigMockFile(tmpConfigFilePath.normalize('NFC'))
   })
 })

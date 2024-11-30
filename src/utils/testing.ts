@@ -1,4 +1,5 @@
 import { exec, ExecException } from 'child_process'
+import { existsSync } from 'fs'
 import { rm } from 'fs/promises'
 import { platform, tmpdir } from 'os'
 import path from 'path'
@@ -47,5 +48,9 @@ export const getTmpConfigFilePath = () => {
 }
 
 export const destroyConfigMockFile = async (path: string) => {
-  await rm(path, { force: true })
+  const normalizedPath = path.normalize('NFC')
+
+  if (normalizedPath && existsSync(normalizedPath)) {
+    await rm(normalizedPath, { force: true })
+  }
 }
