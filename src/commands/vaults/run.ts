@@ -22,6 +22,7 @@ import {
   customCommandLogger,
   logger,
 } from '../../utils/logger'
+import { isTestEnv } from '../../utils/testing'
 
 export const action = async (
   args: CommandArgs,
@@ -230,9 +231,13 @@ export default class Run extends FactoryCommandWithVaults {
   public async run() {
     try {
       const { args, flags } = await this.parse(Run)
-      await this.action(args, this.flagsInterceptor(flags))
+      return await this.action(args, this.flagsInterceptor(flags))
     } catch (error) {
-      this.handleError(error)
+      if (isTestEnv()) {
+        throw error
+      } else {
+        this.handleError(error)
+      }
     } finally {
       flush()
     }

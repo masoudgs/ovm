@@ -24,7 +24,7 @@ describe('Command: run', () => {
 
   it('should fail with invalid command', async () => {
     try {
-      const a = await action(
+      await action(
         {
           command: '',
         },
