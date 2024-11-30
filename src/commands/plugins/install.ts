@@ -5,7 +5,11 @@ import {
   isPluginInstalled,
   Vault,
 } from 'obsidian-utils'
-import { FactoryFlagsWithVaults, InstallArgs, InstallFlags } from '../../commands'
+import {
+  FactoryFlagsWithVaults,
+  InstallArgs,
+  InstallFlags,
+} from '../../commands'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { Config, safeLoadConfig, writeConfig } from '../../providers/config'
 import {

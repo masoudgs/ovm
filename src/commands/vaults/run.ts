@@ -3,13 +3,14 @@ import { each, eachSeries, ErrorCallback } from 'async'
 import { exec, ExecException } from 'child_process'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { Vault } from 'obsidian-utils'
-import { CommandsExecutedOnVaults, FactoryFlagsWithVaults } from '../../commands'
+import {
+  CommandsExecutedOnVaults,
+  FactoryFlagsWithVaults,
+} from '../../commands'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { safeLoadConfig } from '../../providers/config'
 import { vaultsSelector } from '../../providers/vaults'
-import {
-  RESERVED_VARIABLES
-} from '../../utils/constants'
+import { RESERVED_VARIABLES } from '../../utils/constants'
 import {
   CUSTOM_COMMAND_LOGGER_FILE,
   customCommandLogger,
@@ -238,7 +239,8 @@ export default class Run extends FactoryCommandWithVaults {
         { cwd: runFromVaultDirectoryAsWorkDir ? vault.path : __dirname },
         (error, stdout, stderr) => {
           if (error) {
-            reject(error); return;
+            reject(error)
+            return
           }
           resolve(`${stderr}\n${stdout}`)
         },

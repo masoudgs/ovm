@@ -1,9 +1,7 @@
 import { flush } from '@oclif/core'
 import { ArgInput } from '@oclif/core/lib/parser'
 import { FactoryFlags, InitFlags } from '../../commands'
-import {
-  FactoryCommand,
-} from '../../providers/command'
+import { FactoryCommand } from '../../providers/command'
 import { createDefaultConfig, safeLoadConfig } from '../../providers/config'
 
 /**

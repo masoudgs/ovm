@@ -3,7 +3,10 @@ import { Command, Flags, handle } from '@oclif/core'
 import { ParserInput } from '@oclif/core/lib/interfaces/parser'
 import { Vault } from 'obsidian-utils'
 import { FactoryFlags, FactoryFlagsWithVaults } from '../commands'
-import { DEFAULT_CONFIG_PATH, VAULTS_PATH_FLAG_DESCRIPTION } from '../utils/constants'
+import {
+  DEFAULT_CONFIG_PATH,
+  VAULTS_PATH_FLAG_DESCRIPTION,
+} from '../utils/constants'
 import { logger } from '../utils/logger'
 import { findVaultsByPatternMatching, findVaultsFromConfig } from './vaults'
 
@@ -26,7 +29,6 @@ const commonFlags = {
   }),
 }
 
-
 class FactoryCommand extends Command {
   static readonly commonFlags = commonFlags
 
@@ -38,8 +40,10 @@ class FactoryCommand extends Command {
     process.env.OVM_ENABLE_LOG_TIMESTAMP = timestamp ? '0' : '1'
   }
 
-  public enableDebugLogLevel(debug: boolean, flags: ParserInput['flags']): void {
-
+  public enableDebugLogLevel(
+    debug: boolean,
+    flags: ParserInput['flags'],
+  ): void {
     if (debug) {
       logger.level = 'debug'
       logger.debug(`Command called`, { flags })
@@ -109,7 +113,9 @@ class FactoryCommandWithVaults extends FactoryCommand {
     }),
   }
 
-  public flagsInterceptor<T>(flags: FactoryFlagsWithVaults<T>): FactoryFlagsWithVaults<T> {
+  public flagsInterceptor<T>(
+    flags: FactoryFlagsWithVaults<T>,
+  ): FactoryFlagsWithVaults<T> {
     const { debug, timestamp } = flags
 
     this.enableLoggingTimestamp(timestamp)
@@ -118,6 +124,5 @@ class FactoryCommandWithVaults extends FactoryCommand {
     return flags
   }
 }
-
 
 export { FactoryCommand, FactoryCommandWithVaults }

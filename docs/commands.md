@@ -1,6 +1,6 @@
 # Commands
 
-> OVM automatically detects Obsidian vaults for related commands and by using the `-p` flag with a path or a Glob pattern specify custom vaults (e.g., ~/Documents/obsidian/*).
+> OVM automatically detects Obsidian vaults for related commands and by using the `-p` flag with a path or a Glob pattern specify custom vaults (e.g., ~/Documents/obsidian/\*).
 > The content used in the examples below is for illustrative purposes only. e.g. In the output sections, the vaults are stored in `~/Documents/` directory.
 
 All commands have a common set of options:

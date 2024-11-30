@@ -1,7 +1,11 @@
 import { flush, handle } from '@oclif/core'
 import { ArgInput } from '@oclif/core/lib/parser'
 import { eachSeries } from 'async'
-import { FactoryFlagsWithVaults, PruneFlags, PrunePluginVaultOpts } from '../../commands'
+import {
+  FactoryFlagsWithVaults,
+  PruneFlags,
+  PrunePluginVaultOpts,
+} from '../../commands'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { safeLoadConfig } from '../../providers/config'
 import { listInstalledPlugins, removePluginDir } from '../../providers/plugins'

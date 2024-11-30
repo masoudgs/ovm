@@ -85,9 +85,7 @@ export const writeConfig = (
   })
 }
 
-export const createDefaultConfig = (
-  path: string,
-): Promise<Config | Error> => {
+export const createDefaultConfig = (path: string): Promise<Config | Error> => {
   return new Promise((resolve, reject) => {
     try {
       const defaultConfig = ConfigSchema.parse({})

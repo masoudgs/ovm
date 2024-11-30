@@ -1,6 +1,10 @@
 import { expect } from 'chai'
 import { existsSync } from 'fs'
-import { destroyConfigMockFile, getTmpConfigFilePath, runCommand } from '../../utils/testing'
+import {
+  destroyConfigMockFile,
+  getTmpConfigFilePath,
+  runCommand,
+} from '../../utils/testing'
 
 describe('Command: config init', () => {
   beforeEach(async () => {
