@@ -3,7 +3,11 @@ import { Command, Flags, handle } from '@oclif/core'
 import { ParserInput } from '@oclif/core/lib/interfaces/parser'
 import { exec } from 'child_process'
 import { Vault } from 'obsidian-utils'
-import { ExecuteCustomCommandResult, FactoryFlags, FactoryFlagsWithVaults } from '../types/commands'
+import {
+  ExecuteCustomCommandResult,
+  FactoryFlags,
+  FactoryFlagsWithVaults,
+} from '../types/commands'
 import {
   DEFAULT_CONFIG_PATH,
   RESERVED_VARIABLES,
@@ -170,6 +174,5 @@ export {
   asyncExecCustomCommand,
   commandInterpolation,
   FactoryCommand,
-  FactoryCommandWithVaults
+  FactoryCommandWithVaults,
 }
-

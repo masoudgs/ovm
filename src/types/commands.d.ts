@@ -31,6 +31,13 @@ export type ReservedVariables = {
 
 export type InitFlags = Record<string, unknown>
 
+export interface StagePlugin {
+  repo: string
+  version: string
+}
+
+export type StagedPlugins = Array<StagePlugin>
+
 export type InstalledPlugins = Record<string, Array<string>>
 
 export type PruneFlags = Record<string, unknown>
@@ -102,3 +109,21 @@ export interface CommandVault {
   vault: Vault
   command: CommandArgs['command']
 }
+
+export interface InstallCommandIteratorResult {
+  installedPlugins: StagedPlugins
+  failedPlugins: StagedPlugins
+}
+
+export interface InstallCommandCallbackResult {
+  error?: Error
+  success: boolean
+}
+
+export type InstallCommandIterator = (
+  _result: InstallCommandIteratorResult,
+) => void
+
+export type InstallCommandCallback = (
+  _result: InstallCommandCallbackResult,
+) => void

@@ -4,7 +4,7 @@ import { formatDuration, intervalToDuration } from 'date-fns'
 import { Vault } from 'obsidian-utils'
 import {
   asyncExecCustomCommand,
-  commandInterpolation
+  commandInterpolation,
 } from '../../providers/command'
 import { safeLoadConfig } from '../../providers/config'
 import { loadVaults, vaultsSelector } from '../../providers/vaults'
