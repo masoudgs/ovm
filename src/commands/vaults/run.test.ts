@@ -35,7 +35,7 @@ describe('Command: run', () => {
         },
       )
     } catch (error) {
-      expect(error).to.not.be.null
+      expect(error).to.not.be.undefined
     }
   })
 

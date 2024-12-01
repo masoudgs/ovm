@@ -27,7 +27,7 @@ import { isTestEnv } from '../../utils/testing'
 export const action = async (
   args: CommandArgs,
   flags: FactoryFlagsWithVaults<RunFlags>,
-  iterator?: (result: string | ExecuteCustomCommandResult) => Promise<void>,
+  iterator?: (_result: string | ExecuteCustomCommandResult) => Promise<void>,
   errorCallback?: ErrorCallback<Error>,
 ) => {
   const { path, output } = flags
