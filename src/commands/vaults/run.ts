@@ -1,11 +1,10 @@
-import { Args, Flags, flush, handle } from '@oclif/core'
-import { each, eachSeries, ErrorCallback } from 'async'
+import { handle } from '@oclif/core'
+import { each, eachSeries } from 'async'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { Vault } from 'obsidian-utils'
 import {
   asyncExecCustomCommand,
-  commandInterpolation,
-  FactoryCommandWithVaults,
+  commandInterpolation
 } from '../../providers/command'
 import { safeLoadConfig } from '../../providers/config'
 import { loadVaults, vaultsSelector } from '../../providers/vaults'
@@ -13,7 +12,7 @@ import {
   CommandArgs,
   CommandsExecutedOnVaults,
   CommandVault,
-  ExecuteCustomCommandResult,
+  ExecuteCustomCommandCallbackResult,
   FactoryFlagsWithVaults,
   RunFlags,
 } from '../../types/commands'
@@ -22,13 +21,12 @@ import {
   customCommandLogger,
   logger,
 } from '../../utils/logger'
-import { isTestEnv } from '../../utils/testing'
 
 export const action = async (
   args: CommandArgs,
   flags: FactoryFlagsWithVaults<RunFlags>,
-  iterator?: (_result: string | ExecuteCustomCommandResult) => Promise<void>,
-  errorCallback?: ErrorCallback<Error>,
+  iterator?: (_result: string | Error) => void,
+  callback?: (_result: ExecuteCustomCommandCallbackResult | null) => void,
 ) => {
   const { path, output } = flags
   const { success: loadConfigSuccess, error: loadConfigError } =
@@ -107,8 +105,8 @@ export const action = async (
           vault,
           command,
         })
-        if (errorCallback) {
-          errorCallback(result.error as Error)
+        if (iterator) {
+          iterator(result.error as Error)
         }
       }
     } catch (error) {
@@ -119,15 +117,13 @@ export const action = async (
         command,
       })
 
-      if (errorCallback) {
-        errorCallback(error as Error)
+      if (iterator) {
+        iterator(error as Error)
       }
     }
   }
 
-  const commandVaultErrorCallback: ErrorCallback<Error> = (
-    error: Error | null | undefined,
-  ) => {
+  const commandVaultCallback = (error: Error | null | undefined) => {
     if (error) {
       logger.debug('UnhandledException', {
         error: JSON.stringify(error),
@@ -152,6 +148,12 @@ export const action = async (
       } else if (output === 'json') {
         console.log(JSON.stringify(sortedTaskExecutedOnVaults, null, 2))
       }
+
+      if (callback) {
+        callback({
+          sortedTaskExecutedOnVaults,
+        })
+      }
     }
   }
   customCommandLogger.debug('Running command on selected vaults...', {
@@ -159,101 +161,12 @@ export const action = async (
   })
 
   if (flags.async) {
-    return each(
-      vaultsWithCommand,
-      commandVaultIterator,
-      commandVaultErrorCallback,
-    )
+    return each(vaultsWithCommand, commandVaultIterator, commandVaultCallback)
   } else {
     return eachSeries(
       vaultsWithCommand,
       commandVaultIterator,
-      commandVaultErrorCallback,
+      commandVaultCallback,
     )
-  }
-}
-
-export default class Run extends FactoryCommandWithVaults {
-  static readonly aliases = ['r', 'run', 'vr', 'vaults run']
-  static override readonly description = `Run a shell command on selected vaults (using Node.js child_process).\nDisclaimer: Any input containing shell metacharacters may be used to trigger arbitrary command execution, using of this command is at risk of command's caller.`
-  static override readonly examples = [
-    '<%= config.bin %> <%= command.id %> --path=/path/to/vaults',
-    '<%= config.bin %> <%= command.id %> --path=/path/to/vaults/*/.obsidian --output=json',
-    '<%= config.bin %> <%= command.id %> --path=/path/to/vaults/**/.obsidian --output=json --unescape=false',
-    '<%= config.bin %> <%= command.id %> --output=json --async=false',
-    '<%= config.bin %> <%= command.id %> --output=json --silent=true',
-    '<%= config.bin %> <%= command.id %> --output=json --runFromVaultDirectoryAsWorkDir=false',
-  ]
-  static override readonly flags = {
-    output: Flags.string({
-      char: 'o',
-      description: 'Display the output with a specific transformer.',
-      default: 'table',
-      options: ['table', 'json'],
-    }),
-    unescape: Flags.boolean({
-      char: 'u',
-      description:
-        'Unescape special characters in a command to run as a single command.',
-      default: true,
-    }),
-    async: Flags.boolean({
-      char: 'a',
-      description: 'Run the command in parallel on the vault(s).',
-      default: true,
-    }),
-    silent: Flags.boolean({
-      char: 's',
-      description: 'Silent on results of the custom command on vault(s).',
-      default: false,
-    }),
-    runFromVaultDirectoryAsWorkDir: Flags.boolean({
-      char: 'r',
-      description: 'Run the command from the vault directory as working dir.',
-      default: true,
-    }),
-    ...this.commonFlagsWithPath,
-  }
-
-  static override readonly args = {
-    command: Args.string({
-      description:
-        'Command to run and use specified vaults with each execution.',
-      required: true,
-    }),
-  }
-
-  /**
-   * Executes the command.
-   * Parses the arguments and flags, and calls the action method.
-   * Handles errors and ensures flushing of logs.
-   */
-  public async run() {
-    try {
-      const { args, flags } = await this.parse(Run)
-      return await this.action(args, this.flagsInterceptor(flags))
-    } catch (error) {
-      if (isTestEnv()) {
-        throw error
-      } else {
-        this.handleError(error)
-      }
-    } finally {
-      flush()
-    }
-  }
-
-  /**
-   * Main action method for the command.
-   * Loads vaults, selects vaults, and gets stats about number of vaults and installed plugins per vault.
-   * @param {ArgInput} args - The arguments passed to the command.
-   * @param {FactoryFlagsWithVaults<RunFlags>} flags - The flags passed to the command.
-   * @returns {Promise<void>}
-   */
-  private async action(
-    args: CommandArgs,
-    flags: FactoryFlagsWithVaults<RunFlags>,
-  ): Promise<void> {
-    await action(args, flags)
   }
 }
