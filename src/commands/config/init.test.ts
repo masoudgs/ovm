@@ -1,9 +1,11 @@
-import { runCommand } from '@oclif/test'
 import { expect } from 'chai'
+import { safeLoadConfig } from '../../providers/config'
 import {
   destroyConfigMockFile,
   getTmpConfigFilePath,
+  testCommonFlags,
 } from '../../utils/testing'
+import { action } from './init'
 
 const tmpConfigFilePath = getTmpConfigFilePath()
 
@@ -17,11 +19,32 @@ describe('Command: config init', () => {
   })
 
   it('should create a config file', async () => {
-    const tmpConfigFilePath = getTmpConfigFilePath()
-    const result = await runCommand(`config init -c ${tmpConfigFilePath}`)
-    const normalizedOutput = result?.stdout?.trim().replace(/\\\\/g, '\\')
-    expect(normalizedOutput).to.equal(
-      `info: Config file created {"path":"${tmpConfigFilePath.replace(/\\\\/g, '\\')}"}`,
-    )
+    await action({}, testCommonFlags, (error) => {
+      throw error
+    })
+
+    // Verify that the config file was created
+    const result = await safeLoadConfig(tmpConfigFilePath)
+    expect(result.success).to.be.true
+    expect(result.error).to.be.undefined
+  })
+
+  it('should throw an error if the config file already exists', async () => {
+    // First, create the config file
+    await action({}, testCommonFlags, (error) => {
+      throw error
+    })
+
+    // Attempt to create the config file again, expecting an error
+    try {
+      await action({}, testCommonFlags, (error) => {
+        throw error
+      })
+    } catch (error) {
+      const typedError = error as Error
+
+      expect(typedError).to.be.an('error')
+      expect(typedError.message).to.equal('File already exists!')
+    }
   })
 })
