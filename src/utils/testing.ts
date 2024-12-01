@@ -1,5 +1,5 @@
-import { exec } from 'child_process'
-import { existsSync } from 'fs'
+import { execSync } from 'child_process'
+import { existsSync, writeFileSync } from 'fs'
 import { rm } from 'fs/promises'
 import { platform, tmpdir } from 'os'
 import path from 'path'
@@ -23,9 +23,18 @@ export const destroyConfigMockFile = async (path: string) => {
 
 export const createTmpVault = async (vaultPath: string) => {
   const normalizedPath = path.normalize(vaultPath)
-
+  const obsidianDir = path.resolve(normalizedPath, '.obsidian')
   if (normalizedPath && !existsSync(normalizedPath)) {
-    await exec(`mkdir -p ${normalizedPath}/.obsidian`)
+    execSync(`mkdir -p ${obsidianDir}`)
+  }
+
+  const normalizedVaultCommunityPluginsPath = path.resolve(
+    obsidianDir,
+    'community-plugins.json',
+  )
+
+  if (!existsSync(normalizedVaultCommunityPluginsPath)) {
+    writeFileSync(normalizedVaultCommunityPluginsPath, JSON.stringify([]))
   }
 
   return normalizedPath
@@ -38,3 +47,15 @@ export const isTestEnv = () => {
 export const tmpConfigFilePath = getTmpConfigFilePath()
 export const testVaultName = 'test'
 export const testVaultPath = `${tmpdir()}/${testVaultName}`
+export const testCommonFlags = {
+  debug: false,
+  timestamp: false,
+  config: tmpConfigFilePath,
+}
+
+export const destroyVault = async (vaultPath: string) => {
+  const normalizedPath = path.normalize(vaultPath)
+  if (normalizedPath && existsSync(normalizedPath)) {
+    await rm(normalizedPath, { recursive: true, force: true })
+  }
+}
