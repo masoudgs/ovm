@@ -6,7 +6,7 @@ import {
   testVaultPath,
   tmpConfigFilePath,
 } from '../../utils/testing'
-import { action } from './stats'
+import { action } from './statsAction'
 
 describe('Command: stats', () => {
   let config: Config | null = null
