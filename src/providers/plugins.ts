@@ -4,8 +4,6 @@ import { vaultPathToPluginsPath } from 'obsidian-utils'
 import { logger } from '../utils/logger'
 import { Plugin } from './config'
 
-export type InstalledPlugins = Record<string, Array<string>>
-
 export const removePluginDir = async (pluginId: string, vaultPath: string) => {
   const childLogger = logger.child({ pluginId, vaultPath })
   const pluginsPath = vaultPathToPluginsPath(vaultPath)

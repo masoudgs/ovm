@@ -31,6 +31,8 @@ export type ReservedVariables = {
 
 export type InitFlags = Record<string, unknown>
 
+export type InstalledPlugins = Record<string, Array<string>>
+
 export type PruneFlags = Record<string, unknown>
 
 export interface PrunePluginVaultOpts {
@@ -82,6 +84,18 @@ export interface ExecuteCustomCommandResult {
   stdout: string
   stderr: string
   error: ExecException | null
+}
+
+export interface ExecuteCustomCommandCallbackResult {
+  sortedTaskExecutedOnVaults: CommandsExecutedOnVaults
+}
+
+export interface StatsCommandCallbackResult {
+  totalStats: {
+    totalVaults: number
+    totalPlugins: number
+  }
+  installedPlugins: InstalledPlugins
 }
 
 export interface CommandVault {
