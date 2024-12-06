@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'fs'
 import { GitHubPluginVersion } from 'obsidian-utils'
 import z from 'zod'
 import { logger } from '../utils/logger'
+import { stringToJSONSchema } from '../utils/transformer'
 
 const PluginSchema = z.object({
   id: z.string(),
@@ -10,9 +11,11 @@ const PluginSchema = z.object({
 
 export type Plugin = z.infer<typeof PluginSchema>
 
-export const ConfigSchema = z.object({
-  plugins: z.array(PluginSchema).default([]),
-})
+export const ConfigSchema = z
+  .object({
+    plugins: z.array(PluginSchema).default([]),
+  })
+  .strict()
 
 export type Config = z.infer<typeof ConfigSchema>
 
@@ -40,64 +43,55 @@ export const safeLoadConfig = (
   return new Promise((resolve) => {
     try {
       const config = readFileSync(configPath)
-      const parsed = JSON.parse(config.toString()) as Config
-      const { success, data, error } = ConfigSchema.safeParse(parsed)
+      const { success, data, error } = stringToJSONSchema
+        .pipe(ConfigSchema)
+        .safeParse(config.toString())
 
       if (!success) {
-        logger.debug('Invalid config file', { data, error })
-        throw new Error('Invalid config file')
+        logger.debug('Schema validation failed', { error })
+
+        return resolve({
+          success,
+          data,
+          error: new Error('Invalid config file'),
+        })
       }
 
-      resolve({ success, data, error: undefined })
+      return resolve({ success, data, error: undefined })
     } catch (error) {
       const typedError = error as Error
       if (
         typedError instanceof Error &&
         typedError.message.includes('ENOENT')
       ) {
-        resolve({
+        return resolve({
           success: false,
           data: undefined,
           error: new Error('Config file not found'),
         })
       }
 
-      resolve({ success: false, data: undefined, error: typedError })
+      return resolve({ success: false, data: undefined, error: typedError })
     }
   })
 }
 
-export const writeConfig = (
-  config: Config,
-  path: string,
-): Promise<void | Error> => {
+export const writeConfig = (config: Config, path: string): void => {
   logger.debug('Writing config', { path })
-  return new Promise((resolve, reject) => {
-    try {
-      const content = JSON.stringify(config, null, 2)
 
-      writeFileSync(path, content)
-      logger.debug('Config written', { path })
-      resolve()
-    } catch (error) {
-      reject(error as Error)
-    }
-  })
+  const content = JSON.stringify(config, null, 2)
+
+  writeFileSync(path, content)
+
+  logger.debug('Config written', { path })
 }
 
-export const createDefaultConfig = (path: string): Promise<Config | Error> => {
-  return new Promise((resolve, reject) => {
-    try {
-      const defaultConfig = ConfigSchema.parse({})
+export const createDefaultConfig = (path: string, opts?: Config): Config => {
+  const defaultConfig = opts ?? ConfigSchema.parse({})
 
-      writeConfig(defaultConfig, path)
+  writeConfig(defaultConfig, path)
 
-      logger.info('Config file created', { path })
+  logger.info('Config file created', { path })
 
-      resolve(defaultConfig)
-    } catch (error) {
-      const typedError = error as Error
-      reject(typedError)
-    }
-  })
+  return defaultConfig
 }

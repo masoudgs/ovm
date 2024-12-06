@@ -4,7 +4,7 @@ import { isPluginInstalled, Vault } from 'obsidian-utils'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import { Plugin, safeLoadConfig } from '../../providers/config'
 import { pluginsSelector, removePluginDir } from '../../providers/plugins'
-import { vaultsSelector } from '../../providers/vaults'
+import { loadVaults, vaultsSelector } from '../../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   UninstallArgs,
@@ -73,7 +73,7 @@ export default class Uninstall extends FactoryCommandWithVaults {
       process.exit(1)
     }
 
-    const vaults = await this.loadVaults(path)
+    const vaults = await loadVaults(path)
     const selectedVaults = await vaultsSelector(vaults)
 
     // Check if pluginId is provided and uninstall only that plugin

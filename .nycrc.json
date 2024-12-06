@@ -10,7 +10,9 @@
     "coverage/**",
     "dist/**",
     "node_modules/**",
-    "test/**",
-    "bin/**"
+    "bin/**",
+    "**/test/**",
+    "**/*.test.ts",
+    "src/utils/testing.ts"
   ]
 }

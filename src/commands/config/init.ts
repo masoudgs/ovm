@@ -1,8 +1,16 @@
 import { flush } from '@oclif/core'
 import { ArgInput } from '@oclif/core/lib/parser'
 import { FactoryCommand } from '../../providers/command'
-import { createDefaultConfig, safeLoadConfig } from '../../providers/config'
-import { FactoryFlags, InitFlags } from '../../types/commands'
+import {
+  Config,
+  createDefaultConfig,
+  safeLoadConfig,
+} from '../../providers/config'
+import {
+  FactoryFlags,
+  InitCommandCallback,
+  InitFlags,
+} from '../../types/commands'
 
 /**
  * Init command configure an ovm.json config file in user's home dir.
@@ -23,46 +31,47 @@ export default class Init extends FactoryCommand {
   public async run() {
     try {
       const { args, flags } = await this.parse(Init)
-      await this.action(args, this.flagsInterceptor(flags))
+      return action(args, this.flagsInterceptor(flags))
     } catch (error) {
       this.handleError(error)
     } finally {
       flush()
     }
   }
+}
 
-  /**
-   * Main action method for the command.
-   * @param {ArgInput} args - The arguments passed to the command.
-   * @param {FactoryFlags<InitFlags>} flags - The flags passed to the command.
-   * @returns {Promise<void>}
-   */
-  private async action(
-    args: ArgInput,
-    flags: FactoryFlags<InitFlags>,
-  ): Promise<void> {
-    try {
-      const { data: config, error } = await safeLoadConfig(flags.config)
+/**
+ * Main action function for the Init command.
+ * @param {ArgInput} args - The arguments passed to the command.
+ * @param {FactoryFlags<InitFlags>} flags - The flags passed to the command.
+ * @param {InitCommandCallback} callback - Error handling function.
+ * @returns {Promise<void>}
+ */
+export const action = async (
+  args: ArgInput,
+  flags: FactoryFlags<InitFlags>,
+  callback?: InitCommandCallback,
+): Promise<Config | undefined> => {
+  const { config: configPath } = flags
+  const { data: config, error } = await safeLoadConfig(configPath)
 
-      if (config) {
-        throw new Error('File already exists!')
-      }
+  if (error && error.message === 'Config file not found') {
+    const defaultConfig = createDefaultConfig(configPath)
 
-      if (error) {
-        throw error
-      }
-    } catch (error) {
-      const typedError = error as Error
-
-      if (typedError.message === 'Config file not found') {
-        try {
-          await createDefaultConfig(flags.config)
-        } catch (error) {
-          this.handleError(error)
-        }
-      } else {
-        this.handleError(typedError)
-      }
+    if (callback) {
+      callback({
+        success: true,
+      })
+    }
+    return defaultConfig
+  } else if (error) {
+    if (callback) {
+      callback({
+        success: false,
+        error,
+      })
     }
   }
+
+  return config
 }
