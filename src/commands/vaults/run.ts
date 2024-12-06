@@ -92,7 +92,6 @@ export const action = async (
         })
         if (!flags.silent) {
           logger.info(`Run command`, { vault, command })
-          console.log(result)
         }
 
         if (iterator) {

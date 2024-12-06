@@ -12,7 +12,7 @@ describe('Command: stats', () => {
   let config: Config | null = null
   beforeEach(async () => {
     await destroyConfigMockFile(tmpConfigFilePath)
-    config = (await createDefaultConfig(tmpConfigFilePath)) as Config
+    config = createDefaultConfig(tmpConfigFilePath) as Config
     await createTmpVault(testVaultPath)
   })
 

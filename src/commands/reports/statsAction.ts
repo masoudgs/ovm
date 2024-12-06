@@ -85,8 +85,8 @@ export const action = async (
   const statsVaultErrorCallback: ErrorCallback<Error> = (error) => {
     if (error) {
       logger.debug('Error getting stats', { error })
+      callback && callback({ success: false, error })
       handle(error)
-      return error
     } else {
       const totalStats = {
         totalVaults: selectedVaults.length,
@@ -113,6 +113,7 @@ export const action = async (
 
       if (callback) {
         callback({
+          success: true,
           totalStats,
           installedPlugins: sortedInstalledPlugins,
         })
