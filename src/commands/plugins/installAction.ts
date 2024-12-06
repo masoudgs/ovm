@@ -68,12 +68,11 @@ export const installPluginsInVaults = async (
         if (specific) {
           const newPlugins = new Set([...config.plugins])
           const updatedConfig = { ...config, plugins: [...newPlugins] }
-          await writeConfig(updatedConfig, flags.config)
+          writeConfig(updatedConfig, flags.config)
         }
 
         childLogger.info(`Installed plugin`)
       } catch (error) {
-        console.log('in error', error)
         failedPlugins.push({
           repo: pluginInRegistry.repo,
           version: stagePlugin.version,
@@ -112,8 +111,8 @@ export const installPluginsInVaults = async (
  *
  * @param {InstallArgs} args
  * @param {FactoryFlagsWithVaults<InstallFlags>} flags
- * @param {Iterator} [iterator=() => {}]
- * @param {Callback} [callback=() => {}]
+ * @param {InstallCommandIterator} [iterator=() => {}]
+ * @param {InstallCommandCallback} [callback=() => {}]
  * @return {Promise<void>}
  */
 export const action = async (

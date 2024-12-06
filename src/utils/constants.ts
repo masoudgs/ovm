@@ -8,6 +8,6 @@ export const DEFAULT_CONFIG_PATH = path.join(homedir(), OVM_CONFIG_FILENAME)
 export const VAULTS_PATH_FLAG_DESCRIPTION =
   '[default: detect from Obsidian config] Path or Glob pattern of vaults to install plugins.'
 export const RESERVED_VARIABLES: ReservedVariables = {
-  0: getVaultPath,
-  1: getVaultName,
+  '0': getVaultPath,
+  '1': getVaultName,
 }

@@ -36,6 +36,10 @@ export interface StagePlugin {
   version: string
 }
 
+export interface PrunedPlugin {
+  id: string
+}
+
 export type StagedPlugins = Array<StagePlugin>
 
 export type InstalledPlugins = Record<string, Array<string>>
@@ -97,12 +101,12 @@ export interface ExecuteCustomCommandCallbackResult {
   sortedTaskExecutedOnVaults: CommandsExecutedOnVaults
 }
 
-export interface StatsCommandCallbackResult {
-  totalStats: {
+export type StatsCommandCallbackResult = CommandCallbackBaseResult & {
+  totalStats?: {
     totalVaults: number
     totalPlugins: number
   }
-  installedPlugins: InstalledPlugins
+  installedPlugins?: InstalledPlugins
 }
 
 export interface CommandVault {
@@ -110,20 +114,36 @@ export interface CommandVault {
   command: CommandArgs['command']
 }
 
+export type CommandCallbackBaseResult = {
+  success: boolean
+  error?: Error
+}
+
+export type InitCommandCallbackResult = CommandCallbackBaseResult
+
+export type InitCommandCallback = (_result: InitCommandCallbackResult) => void
+
 export interface InstallCommandIteratorResult {
   installedPlugins: StagedPlugins
   failedPlugins: StagedPlugins
-}
-
-export interface InstallCommandCallbackResult {
-  error?: Error
-  success: boolean
 }
 
 export type InstallCommandIterator = (
   _result: InstallCommandIteratorResult,
 ) => void
 
+export type InstallCommandCallbackResult = CommandCallbackBaseResult
+
 export type InstallCommandCallback = (
   _result: InstallCommandCallbackResult,
 ) => void
+
+export interface PruneCommandIteratorResult {
+  prunedPlugins: Array<PrunedPlugin>
+}
+
+export type PruneCommandIterator = (_result: PruneCommandIteratorResult) => void
+
+export type PruneCommandCallbackResult = CommandCallbackBaseResult
+
+export type PruneCommandCallback = (_result: PruneCommandCallbackResult) => void

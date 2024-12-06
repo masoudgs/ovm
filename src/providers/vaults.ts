@@ -52,7 +52,7 @@ export const vaultsSelector = async (vaults: Vault[]) => {
     required: true,
   })
 
-  logger.debug('selectedVaults', { selectedVaults })
+  logger.debug('Selected vaults', { selectedVaults })
 
   return selectedVaults
 }

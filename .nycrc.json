@@ -12,6 +12,7 @@
     "node_modules/**",
     "bin/**",
     "**/test/**",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "src/utils/testing.ts"
   ]
 }

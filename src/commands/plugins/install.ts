@@ -42,7 +42,6 @@ export default class Install extends FactoryCommandWithVaults {
       const { args, flags } = await this.parse(Install)
       return action(args, this.flagsInterceptor(flags))
     } catch (error) {
-      console.log('error', error)
       this.handleError(error)
       throw error
     } finally {

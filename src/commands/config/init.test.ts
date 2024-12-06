@@ -18,33 +18,26 @@ describe('Command: config init', () => {
     await destroyConfigMockFile(tmpConfigFilePath)
   })
 
-  it('should create a config file', async () => {
-    await action({}, testCommonFlags, (error) => {
-      throw error
+  it('should create a config file and fail for second attempt', async () => {
+    await action({}, testCommonFlags, (result) => {
+      expect(result.success).to.be.true
     })
 
     // Verify that the config file was created
     const result = await safeLoadConfig(tmpConfigFilePath)
     expect(result.success).to.be.true
     expect(result.error).to.be.undefined
-  })
 
-  it('should throw an error if the config file already exists', async () => {
-    // First, create the config file
-    await action({}, testCommonFlags, (error) => {
-      throw error
-    })
-
-    // Attempt to create the config file again, expecting an error
+    // Verify that the second attempt fails
     try {
-      await action({}, testCommonFlags, (error) => {
-        throw error
+      await action({}, testCommonFlags, (result) => {
+        expect(result.success).to.be.false
       })
     } catch (error) {
       const typedError = error as Error
-
-      expect(typedError).to.be.an('error')
-      expect(typedError.message).to.equal('File already exists!')
+      expect(typedError.message).to.match(/File already exists!/)
     }
   })
+
+  it.skip('should throw an error if opening config fail forbidden', async () => {})
 })

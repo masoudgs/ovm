@@ -174,5 +174,5 @@ export {
   asyncExecCustomCommand,
   commandInterpolation,
   FactoryCommand,
-  FactoryCommandWithVaults,
+  FactoryCommandWithVaults
 }
