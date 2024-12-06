@@ -1,12 +1,12 @@
 import { expect } from 'chai'
-import { Config, createDefaultConfig } from '../../providers/config'
 import {
   createTmpVault,
   destroyConfigMockFile,
   testVaultPath,
   tmpConfigFilePath,
-} from '../../utils/testing'
-import { action } from './statsAction'
+} from '../utils/testing'
+import { Config, createDefaultConfig } from './config'
+import { action } from './stats'
 
 describe('Command: stats', () => {
   let config: Config | null = null
@@ -36,8 +36,8 @@ describe('Command: stats', () => {
       (result) => {
         expect(result).to.have.property('totalStats')
         expect(result).to.have.property('installedPlugins')
-        expect(result.totalStats.totalVaults).to.be.equal(1)
-        expect(result.totalStats.totalPlugins).to.be.equal(
+        expect(result.totalStats?.totalVaults).to.be.equal(1)
+        expect(result.totalStats?.totalPlugins).to.be.equal(
           config?.plugins.length,
         )
       },

@@ -2,9 +2,9 @@ import { Args, flush, handle } from '@oclif/core'
 import { eachSeries } from 'async'
 import { isPluginInstalled, Vault } from 'obsidian-utils'
 import { FactoryCommandWithVaults } from '../../providers/command'
-import { Plugin, safeLoadConfig } from '../../providers/config'
 import { pluginsSelector, removePluginDir } from '../../providers/plugins'
 import { loadVaults, vaultsSelector } from '../../providers/vaults'
+import { Plugin, safeLoadConfig } from '../../services/config'
 import {
   FactoryFlagsWithVaults,
   UninstallArgs,

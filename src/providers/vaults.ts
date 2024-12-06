@@ -2,8 +2,8 @@ import { checkbox } from '@inquirer/prompts'
 import { glob } from 'glob'
 import { findVault, Vault } from 'obsidian-utils'
 import { basename, dirname } from 'path'
+import { isTestEnv } from '../utils/env'
 import { logger } from '../utils/logger'
-import { isTestEnv } from '../utils/testing'
 
 export const findVaultsByPatternMatching = async (pathPattern: string) => {
   if (!pathPattern.endsWith('.obsidian')) {

@@ -5,7 +5,7 @@ import {
   Config,
   createDefaultConfig,
   safeLoadConfig,
-} from '../../providers/config'
+} from '../../services/config'
 import {
   FactoryFlags,
   InitCommandCallback,

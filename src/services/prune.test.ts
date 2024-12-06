@@ -1,5 +1,4 @@
 import sinon from 'sinon'
-import { createDefaultConfig } from '../../providers/config'
 import {
   createTmpVault,
   destroyConfigMockFile,
@@ -7,8 +6,9 @@ import {
   testCommonFlags,
   testVaultPath,
   tmpConfigFilePath,
-} from '../../utils/testing'
-import { action } from './pruneAction'
+} from '../utils/testing'
+import { createDefaultConfig } from './config'
+import { action } from './prune'
 
 describe('Command: prune', () => {
   beforeEach(async () => {

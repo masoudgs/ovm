@@ -15,7 +15,7 @@ OVM is a CLI application designed to independently streamline management of vaul
 You can checkout the detailed documentation for OVM:
 
 - [Installation](docs/installation.md)
-- [Configuration](docs/Configuration.md)
+- [Configuration](docs/configuration.md)
 - [Commands](docs/commands.md)
 
 ## License

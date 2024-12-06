@@ -40,10 +40,6 @@ export const createTmpVault = async (vaultPath: string) => {
   return normalizedPath
 }
 
-export const isTestEnv = () => {
-  return typeof global.it === 'function' || process.env.CI === 'true'
-}
-
 export const tmpConfigFilePath = getTmpConfigFilePath()
 export const testVaultName = 'test'
 export const testVaultPath = `${tmpdir()}/${testVaultName}`

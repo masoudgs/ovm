@@ -1,11 +1,11 @@
 import { expect } from 'chai'
-import { safeLoadConfig } from '../../providers/config'
+import { action } from '../commands/config/init'
 import {
-  destroyConfigMockFile,
-  getTmpConfigFilePath,
-  testCommonFlags,
-} from '../../utils/testing'
-import { action } from './init'
+    destroyConfigMockFile,
+    getTmpConfigFilePath,
+    testCommonFlags,
+} from '../utils/testing'
+import { safeLoadConfig } from './config'
 
 const tmpConfigFilePath = getTmpConfigFilePath()
 

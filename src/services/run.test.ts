@@ -1,12 +1,12 @@
 import { expect } from 'chai'
-import { createDefaultConfig } from '../../providers/config'
 import {
   createTmpVault,
   destroyConfigMockFile,
   testVaultName,
   testVaultPath,
   tmpConfigFilePath,
-} from '../../utils/testing'
+} from '../utils/testing'
+import { createDefaultConfig } from './config'
 import { action } from './run'
 
 describe('Command: run', () => {

@@ -1,19 +1,23 @@
-import { ExitPromptError } from '@inquirer/core'
-import { Command, Flags, handle } from '@oclif/core'
+import { Command, Flags } from '@oclif/core'
 import { ParserInput } from '@oclif/core/lib/interfaces/parser'
 import { exec } from 'child_process'
 import { Vault } from 'obsidian-utils'
+import { homedir } from 'os'
+import path from 'path'
 import {
-  ExecuteCustomCommandResult,
-  FactoryFlags,
-  FactoryFlagsWithVaults,
+    ExecuteCustomCommandResult,
+    FactoryFlags,
+    FactoryFlagsWithVaults,
 } from '../types/commands'
+import { handlerCommandError } from '../utils/command'
 import {
-  DEFAULT_CONFIG_PATH,
-  RESERVED_VARIABLES,
-  VAULTS_PATH_FLAG_DESCRIPTION,
+    OVM_CONFIG_FILENAME,
+    RESERVED_VARIABLES,
+    VAULTS_PATH_FLAG_DESCRIPTION,
 } from '../utils/constants'
 import { logger } from '../utils/logger'
+
+const DEFAULT_CONFIG_PATH = path.join(homedir(), OVM_CONFIG_FILENAME)
 
 const commonFlags = {
   debug: Flags.boolean({
@@ -69,15 +73,7 @@ class FactoryCommand extends Command {
   }
 
   public handleError(error: unknown) {
-    if (process.env.CI) {
-      throw error
-    }
-    if (error instanceof ExitPromptError) {
-      logger.debug('Exit prompt error:', { error })
-    } else if (error instanceof Error) {
-      logger.debug('An error occurred while installation:', { error })
-      handle(error)
-    }
+    handlerCommandError(error)
   }
 }
 
@@ -123,15 +119,7 @@ class FactoryCommandWithVaults extends Command {
   }
 
   public handleError(error: unknown) {
-    if (process.env.CI) {
-      throw error
-    }
-    if (error instanceof ExitPromptError) {
-      logger.debug('Exit prompt error:', { error })
-    } else if (error instanceof Error) {
-      logger.debug('An error occurred while installation:', { error })
-      handle(error)
-    }
+    handlerCommandError(error)
   }
 }
 
@@ -171,8 +159,9 @@ const asyncExecCustomCommand = async (
 }
 
 export {
-  asyncExecCustomCommand,
-  commandInterpolation,
-  FactoryCommand,
-  FactoryCommandWithVaults
+    asyncExecCustomCommand,
+    commandInterpolation,
+    FactoryCommand,
+    FactoryCommandWithVaults
 }
+

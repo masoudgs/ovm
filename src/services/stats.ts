@@ -12,16 +12,16 @@ import {
 } from 'obsidian-utils'
 import { join } from 'path'
 import { promisify } from 'util'
-import { Config, safeLoadConfig } from '../../providers/config'
-import { loadVaults, vaultsSelector } from '../../providers/vaults'
+import { loadVaults, vaultsSelector } from '../providers/vaults'
 import {
   ExecuteCustomCommandResult,
   FactoryFlagsWithVaults,
   InstalledPlugins,
   StatsCommandCallbackResult,
   StatsFlags,
-} from '../../types/commands'
-import { logger } from '../../utils/logger'
+} from '../types/commands'
+import { logger } from '../utils/logger'
+import { Config, safeLoadConfig } from './config'
 
 export const action = async (
   args: ArgInput,

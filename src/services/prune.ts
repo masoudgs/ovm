@@ -1,16 +1,16 @@
 import { ArgInput } from '@oclif/core/lib/parser'
 import { eachSeries } from 'async'
-import { safeLoadConfig } from '../../providers/config'
-import { listInstalledPlugins, removePluginDir } from '../../providers/plugins'
-import { loadVaults, vaultsSelector } from '../../providers/vaults'
+import { listInstalledPlugins, removePluginDir } from '../providers/plugins'
+import { loadVaults, vaultsSelector } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   PruneCommandCallback,
   PruneCommandIterator,
   PruneFlags,
   PrunePluginVaultOpts,
-} from '../../types/commands'
-import { logger } from '../../utils/logger'
+} from '../types/commands'
+import { logger } from '../utils/logger'
+import { safeLoadConfig } from './config'
 
 /**
  * Main action method for the prune command.

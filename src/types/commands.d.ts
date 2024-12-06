@@ -1,6 +1,6 @@
 import { ExecException } from 'child_process'
 import { Vault } from 'obsidian-utils'
-import { Config } from '../providers/config'
+import { Config } from '../services/config'
 
 export type CommonFlags = {
   debug: boolean

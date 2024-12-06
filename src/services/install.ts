@@ -4,13 +4,12 @@ import {
   isPluginInstalled,
   Vault,
 } from 'obsidian-utils'
-import { Config, safeLoadConfig, writeConfig } from '../../providers/config'
 import {
   findPluginInRegistry,
   handleExceedRateLimitError,
-} from '../../providers/github'
-import { modifyCommunityPlugins } from '../../providers/plugins'
-import { loadVaults, vaultsSelector } from '../../providers/vaults'
+} from '../providers/github'
+import { modifyCommunityPlugins } from '../providers/plugins'
+import { loadVaults, vaultsSelector } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   InstallArgs,
@@ -18,9 +17,10 @@ import {
   InstallCommandIterator,
   InstallFlags,
   StagedPlugins,
-} from '../../types/commands'
-import { PluginNotFoundInRegistryError } from '../../utils/errors'
-import { logger } from '../../utils/logger'
+} from '../types/commands'
+import { PluginNotFoundInRegistryError } from '../utils/errors'
+import { logger } from '../utils/logger'
+import { Config, safeLoadConfig, writeConfig } from './config'
 
 export const installPluginsInVaults = async (
   vaults: Vault[],

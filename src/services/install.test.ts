@@ -1,6 +1,5 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { createDefaultConfig } from '../../providers/config'
 import {
   createTmpVault,
   destroyConfigMockFile,
@@ -8,8 +7,9 @@ import {
   testCommonFlags,
   testVaultPath,
   tmpConfigFilePath,
-} from '../../utils/testing'
-import { action } from './installAction'
+} from '../utils/testing'
+import { createDefaultConfig } from './config'
+import { action } from './install'
 
 const samplePluginId = 'obsidian-linter'
 describe('Command: install', () => {
