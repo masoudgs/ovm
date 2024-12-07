@@ -1,9 +1,9 @@
 import { expect } from 'chai'
 import { action } from '../commands/config/init'
 import {
-    destroyConfigMockFile,
-    getTmpConfigFilePath,
-    testCommonFlags,
+  destroyConfigMockFile,
+  getTmpConfigFilePath,
+  testCommonFlags,
 } from '../utils/testing'
 import { safeLoadConfig } from './config'
 

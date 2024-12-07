@@ -5,15 +5,15 @@ import { Vault } from 'obsidian-utils'
 import { homedir } from 'os'
 import path from 'path'
 import {
-    ExecuteCustomCommandResult,
-    FactoryFlags,
-    FactoryFlagsWithVaults,
+  ExecuteCustomCommandResult,
+  FactoryFlags,
+  FactoryFlagsWithVaults,
 } from '../types/commands'
 import { handlerCommandError } from '../utils/command'
 import {
-    OVM_CONFIG_FILENAME,
-    RESERVED_VARIABLES,
-    VAULTS_PATH_FLAG_DESCRIPTION,
+  OVM_CONFIG_FILENAME,
+  RESERVED_VARIABLES,
+  VAULTS_PATH_FLAG_DESCRIPTION,
 } from '../utils/constants'
 import { logger } from '../utils/logger'
 
@@ -159,9 +159,8 @@ const asyncExecCustomCommand = async (
 }
 
 export {
-    asyncExecCustomCommand,
-    commandInterpolation,
-    FactoryCommand,
-    FactoryCommandWithVaults
+  asyncExecCustomCommand,
+  commandInterpolation,
+  FactoryCommand,
+  FactoryCommandWithVaults,
 }
-
