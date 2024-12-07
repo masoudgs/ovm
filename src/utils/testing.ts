@@ -1,5 +1,5 @@
-import { execSync } from 'child_process'
 import { existsSync, writeFileSync } from 'fs'
+import fse from 'fs-extra'
 import { rm } from 'fs/promises'
 import { platform, tmpdir } from 'os'
 import path from 'path'
@@ -25,7 +25,7 @@ export const createTmpVault = async (vaultPath: string) => {
   const normalizedPath = path.normalize(vaultPath)
   const obsidianDir = path.resolve(normalizedPath, '.obsidian')
   if (normalizedPath && !existsSync(normalizedPath)) {
-    execSync(`mkdir -p ${obsidianDir}`)
+    fse.mkdirpSync(obsidianDir)
   }
 
   const normalizedVaultCommunityPluginsPath = path.resolve(
