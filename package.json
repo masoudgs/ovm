@@ -21,8 +21,8 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest && pnpm run build:release && pnpm run test:unit",
-    "test:unit": "mocha",
-    "test:coverage": "nyc npm run test:unit"
+    "test:unit": "mocha --",
+    "test:coverage": "nyc npm run test:unit --"
   },
   "keywords": [
     "obsidian",
@@ -64,8 +64,8 @@
   "dependencies": {
     "@inquirer/core": "9.0.10",
     "@inquirer/prompts": "5.3.8",
-    "@oclif/core": "4.0.17",
-    "@oclif/plugin-help": "6.2.8",
+    "@oclif/core": "4.0.34",
+    "@oclif/plugin-help": "6.2.18",
     "async": "3.2.5",
     "date-fns": "3.6.0",
     "fast-folder-size": "2.2.0",
@@ -80,7 +80,7 @@
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "1.0.2",
     "@oclif/prettier-config": "0.2.1",
-    "@oclif/test": "4.0.8",
+    "@oclif/test": "4.1.2",
     "@total-typescript/ts-reset": "0.5.1",
     "@types/async": "3.2.24",
     "@types/cacache": "17.0.2",
@@ -101,10 +101,10 @@
     "mock-fs": "5.2.0",
     "nyc": "17.0.0",
     "obsidian": "1.6.6",
-    "oclif": "4.14.15",
+    "oclif": "4.16.0",
     "prettier": "3.3.3",
     "shx": "0.3.4",
-    "sinon": "18.0.0",
+    "sinon": "19.0.2",
     "ts-node": "10.9.2",
     "tsx": "4.17.0",
     "typescript": "5.5.4",
