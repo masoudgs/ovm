@@ -1,10 +1,8 @@
 import { checkbox } from '@inquirer/prompts'
 import { readdir, readFile, rm, writeFile } from 'fs/promises'
 import { vaultPathToPluginsPath } from 'obsidian-utils'
+import { Plugin } from '../services/config'
 import { logger } from '../utils/logger'
-import { Plugin } from './config'
-
-export type InstalledPlugins = Record<string, Array<string>>
 
 export const removePluginDir = async (pluginId: string, vaultPath: string) => {
   const childLogger = logger.child({ pluginId, vaultPath })

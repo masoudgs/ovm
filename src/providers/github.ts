@@ -39,7 +39,7 @@ export const fetchPlugins = async (): Promise<PluginRegistry[]> => {
   if (!response.ok) {
     throw new Error('Failed to fetch plugins')
   }
-  return response.json()
+  return response.json() as unknown as PluginRegistry[]
 }
 
 export const findPluginInRegistry = async (
