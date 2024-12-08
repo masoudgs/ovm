@@ -60,10 +60,7 @@ export const safeLoadConfig = (
       return resolve({ success, data, error: undefined })
     } catch (error) {
       const typedError = error as Error
-      if (
-        typedError instanceof Error &&
-        typedError.message.includes('ENOENT')
-      ) {
+      if (typedError.message.includes('ENOENT')) {
         return resolve({
           success: false,
           data: undefined,
