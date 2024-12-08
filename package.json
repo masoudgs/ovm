@@ -21,8 +21,8 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest && pnpm run build:release && pnpm run test:unit",
-    "test:unit": "mocha --",
-    "test:coverage": "nyc npm run test:unit --"
+    "test:unit": "mocha -R=spec",
+    "test:coverage": "nyc mocha"
   },
   "keywords": [
     "obsidian",
@@ -98,6 +98,7 @@
     "fs-extra": "^11.2.0",
     "globals": "15.9.0",
     "mocha": "10.7.3",
+    "mocha-junit-reporter": "^2.2.1",
     "mock-fs": "5.2.0",
     "nyc": "17.0.0",
     "obsidian": "1.6.6",

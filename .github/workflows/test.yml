@@ -45,6 +45,8 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+        uses: codecov/test-results-action@v1.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/junit.xml,!./cache
+          fail_ci_if_error: true
