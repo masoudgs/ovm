@@ -15,7 +15,7 @@ const samplePluginId = 'obsidian-linter'
 describe('Command: install', () => {
   beforeEach(async () => {
     await destroyConfigMockFile(tmpConfigFilePath)
-    await destroyVault(testVaultPath)
+    destroyVault(testVaultPath)
     createDefaultConfig(tmpConfigFilePath)
   })
 
@@ -41,7 +41,32 @@ describe('Command: install', () => {
         )
       },
       (result) => {
-        expect(result).to.be.an('object')
+        expect(result).to.have.property('success')
+        expect(result.success).to.be.true
+      },
+    )
+  })
+
+  it('should perform installation successfully', async () => {
+    await createTmpVault(testVaultPath)
+    await action(
+      { pluginId: samplePluginId },
+      { ...testCommonFlags, enable: true, path: testVaultPath },
+      (iterator) => {
+        expect(iterator).to.be.an('object')
+        expect(iterator).to.have.property('installedPlugins')
+        expect(iterator).to.have.property('failedPlugins')
+        expect(iterator.installedPlugins).to.be.an('array')
+        expect(iterator.failedPlugins).to.be.an('array')
+        expect(iterator.installedPlugins.length).to.be.greaterThan(0)
+        expect(iterator.failedPlugins.length).to.equal(0)
+        expect(iterator.installedPlugins[0].repo).to.match(
+          new RegExp(samplePluginId),
+        )
+        expect(iterator.reinstallPlugins).to.be.an('array')
+        expect(iterator.reinstallPlugins.length).to.equal(0)
+      },
+      (result) => {
         expect(result).to.have.property('success')
         expect(result.success).to.be.true
       },
@@ -66,7 +91,6 @@ describe('Command: install', () => {
         expect(iterator.failedPlugins[0].repo).to.equal(pluginId)
       },
       (result) => {
-        expect(result).to.be.an('object')
         expect(result).to.have.property('success')
         expect(result.success).to.be.false
       },

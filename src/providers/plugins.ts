@@ -5,15 +5,16 @@ import { Plugin } from '../services/config'
 import { logger } from '../utils/logger'
 
 export const removePluginDir = async (pluginId: string, vaultPath: string) => {
-  const childLogger = logger.child({ pluginId, vaultPath })
   const pluginsPath = vaultPathToPluginsPath(vaultPath)
   const pluginDir = `${pluginsPath}/${pluginId}`
+  const childLogger = logger.child({ pluginsPath, pluginId })
 
-  childLogger.debug(`Remove plugin`, { pluginId, pluginDir, pluginsPath })
+  childLogger.debug(`Remove plugin`)
 
   await rm(pluginDir, { recursive: true, force: true })
+  await modifyCommunityPlugins({ id: pluginId }, vaultPath, 'disable')
 
-  childLogger.info(`Removed plugin`)
+  childLogger.debug(`Removed plugin`)
 }
 
 export const listInstalledPlugins = async (vaultPath: string) => {

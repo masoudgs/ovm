@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from 'fs'
+import { existsSync, rmSync, writeFileSync } from 'fs'
 import fse from 'fs-extra'
 import { rm } from 'fs/promises'
 import { platform, tmpdir } from 'os'
@@ -49,9 +49,11 @@ export const testCommonFlags = {
   config: tmpConfigFilePath,
 }
 
-export const destroyVault = async (vaultPath: string) => {
+export const destroyVault = (vaultPath: string) => {
   const normalizedPath = path.normalize(vaultPath)
+
   if (normalizedPath && existsSync(normalizedPath)) {
-    await rm(normalizedPath, { recursive: true, force: true })
+    fse.emptyDirSync(normalizedPath)
+    rmSync(normalizedPath, { recursive: true, force: true })
   }
 }
