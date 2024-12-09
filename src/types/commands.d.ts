@@ -126,6 +126,7 @@ export type InitCommandCallback = (_result: InitCommandCallbackResult) => void
 export interface InstallCommandIteratorResult {
   installedPlugins: StagedPlugins
   failedPlugins: StagedPlugins
+  reinstallPlugins: StagedPlugins
 }
 
 export type InstallCommandIterator = (

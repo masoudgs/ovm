@@ -42,9 +42,15 @@ export const action = async (
   const vaults = await loadVaults(path)
   const selectedVaults = await vaultsSelector(vaults)
   const vaultsWithConfig = selectedVaults.map((vault) => ({ vault, config }))
+
   const prunePluginsIterator = async (opts: PrunePluginVaultOpts) => {
     const { vault, config } = opts
     const childLogger = logger.child({ vault })
+
+    if (!config.plugins.length) {
+      return
+    }
+
     const installedPlugins = await listInstalledPlugins(vault.path)
     const referencedPlugins = config.plugins.map(({ id }) => id)
     const toBePruned = installedPlugins.filter(
@@ -56,10 +62,11 @@ export const action = async (
       await removePluginDir(plugin.id, vault.path)
     }
 
-    childLogger.info(`Pruned ${toBePruned.length} plugins`)
+    childLogger.debug(`Pruned ${toBePruned.length} `)
+    logger.info(`Pruned ${toBePruned.length} plugins`, { vault })
 
     if (iterator) {
-      iterator({ prunedPlugins: toBePruned })
+      return iterator({ prunedPlugins: toBePruned })
     }
   }
 

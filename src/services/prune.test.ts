@@ -1,4 +1,7 @@
+import { expect } from 'chai'
+import { after } from 'mocha'
 import sinon from 'sinon'
+import { setTimeout } from 'timers/promises'
 import {
   createTmpVault,
   destroyConfigMockFile,
@@ -8,29 +11,81 @@ import {
   tmpConfigFilePath,
 } from '../utils/testing'
 import { createDefaultConfig } from './config'
-import { action } from './prune'
+import { action as installAction } from './install'
+import { action as pruneAction } from './prune'
+
+const samplePlugin1Id = 'obsidian-linter'
+const samplePlugin2Id = 'colored-tags'
+
+const installActionIteratorSpy = sinon.spy()
 
 describe('Command: prune', () => {
   beforeEach(async () => {
     await destroyConfigMockFile(tmpConfigFilePath)
-    await destroyVault(testVaultPath)
+    destroyVault(testVaultPath)
     createDefaultConfig(tmpConfigFilePath)
   })
 
-  afterEach(async () => {
+  after(() => {
     sinon.restore()
+    destroyVault(testVaultPath)
   })
 
   it('should prune plugins successfully', async () => {
     await createTmpVault(testVaultPath)
-    await action({}, { ...testCommonFlags, path: testVaultPath })
-    // Add assertions to verify the plugins were pruned
+
+    await installAction(
+      { pluginId: samplePlugin1Id },
+      { ...testCommonFlags, enable: true, path: testVaultPath },
+      installActionIteratorSpy,
+      (result) => {
+        expect(result.success).to.be.true
+      },
+    )
+
+    await installAction(
+      { pluginId: samplePlugin2Id },
+      { ...testCommonFlags, enable: true, path: testVaultPath },
+      installActionIteratorSpy,
+      (result) => {
+        expect(result.success).to.be.true
+      },
+    )
+
+    // Wait for the plugins to be installed
+    await setTimeout(2000)
+
+    await pruneAction(
+      {},
+      { ...testCommonFlags, path: testVaultPath },
+      (iterator) => {
+        expect(iterator?.prunedPlugins).to.have.lengthOf(2)
+        expect(
+          iterator?.prunedPlugins?.some(({ id }) => samplePlugin1Id === id),
+        ).to.be.true
+        expect(
+          iterator?.prunedPlugins?.some(({ id }) => samplePlugin2Id === id),
+        ).to.be.true
+      },
+      (result) => {
+        expect(result).to.have.property('success')
+        expect(result.success).to.be.true
+      },
+    )
   })
 
-  it('should handle errors during pruning', async () => {
+  it('should prune only if plugins directory exists', async () => {
     await createTmpVault(testVaultPath)
-    sinon.stub(process, 'exit')
-    await action({}, { ...testCommonFlags, path: testVaultPath })
-    // Add assertions to verify error handling
+    await pruneAction(
+      {},
+      { ...testCommonFlags, path: testVaultPath },
+      (iterator) => {
+        expect(iterator.prunedPlugins).to.have.lengthOf(0)
+      },
+      (result) => {
+        expect(result).to.have.property('success')
+        expect(result.success).to.be.true
+      },
+    )
   })
 })

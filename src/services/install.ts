@@ -31,12 +31,13 @@ export const installPluginsInVaults = async (
   callback: InstallCommandCallback,
 ) => {
   const installVaultIterator = async (vault: Vault) => {
-    logger.debug(`Install plugins for vault`, { vault })
     const installedPlugins: StagedPlugins = []
     const failedPlugins: StagedPlugins = []
+    const reinstallPlugins: StagedPlugins = []
 
     for (const stagePlugin of config.plugins) {
-      const childLogger = logger.child({ plugin: stagePlugin, vault })
+      const childLogger = logger.child({ plugin: stagePlugin })
+      childLogger.debug(`Install plugin`)
 
       const pluginInRegistry = await findPluginInRegistry(stagePlugin.id)
       if (!pluginInRegistry) {
@@ -45,6 +46,10 @@ export const installPluginsInVaults = async (
 
       if (await isPluginInstalled(pluginInRegistry.id, vault.path)) {
         childLogger.info(`Plugin already installed`)
+        reinstallPlugins.push({
+          repo: pluginInRegistry.repo,
+          version: stagePlugin.version as string,
+        })
         continue
       }
 
@@ -88,11 +93,13 @@ export const installPluginsInVaults = async (
       })
     }
 
+    const result = { installedPlugins, failedPlugins, reinstallPlugins }
+
     if (iterator) {
-      iterator({ installedPlugins, failedPlugins })
+      iterator(result)
     }
 
-    return { installedPlugins, failedPlugins }
+    return result
   }
 
   return eachSeries(vaults, installVaultIterator, (error) => {
@@ -137,24 +144,16 @@ export const action = async (
   const selectedVaults = await vaultsSelector(vaults)
 
   // Check if pluginId is provided and install only that plugin
-  const { pluginId } = args
-  if (pluginId) {
-    await installPluginsInVaults(
-      selectedVaults,
-      { ...config, plugins: [{ id: pluginId }] },
-      flags,
-      true,
-      iterator,
-      callback,
-    )
-  } else {
-    await installPluginsInVaults(
-      selectedVaults,
-      config,
-      flags,
-      false,
-      iterator,
-      callback,
-    )
-  }
+  const configWithPlugins = args.pluginId
+    ? { plugins: [{ id: args.pluginId }] }
+    : config
+
+  await installPluginsInVaults(
+    selectedVaults,
+    configWithPlugins,
+    flags,
+    false,
+    iterator,
+    callback,
+  )
 }
