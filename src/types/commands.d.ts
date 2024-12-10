@@ -1,6 +1,6 @@
 import { ExecException } from 'child_process'
 import { Vault } from 'obsidian-utils'
-import { Config } from '../services/config'
+import { Config, Plugin } from '../services/config'
 
 export type CommonFlags = {
   debug: boolean
@@ -148,3 +148,22 @@ export type PruneCommandIterator = (_result: PruneCommandIteratorResult) => void
 export type PruneCommandCallbackResult = CommandCallbackBaseResult
 
 export type PruneCommandCallback = (_result: PruneCommandCallbackResult) => void
+
+export interface UninstalledPlugin {
+  id: string
+}
+
+export interface UninstallCommandIteratorResult {
+  uninstalledPlugins: Array<Plugin>
+  failedPlugins: Array<Plugin>
+}
+
+export type UninstallCommandIterator = (
+  _result: UninstallCommandIteratorResult,
+) => void
+
+export type UninstallCommandCallbackResult = CommandCallbackBaseResult
+
+export type UninstallCommandCallback = (
+  _result: UninstallCommandCallbackResult,
+) => void
