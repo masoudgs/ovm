@@ -1,7 +1,9 @@
 import { expect } from 'chai'
+import { after } from 'mocha'
 import {
   createTmpVault,
   destroyConfigMockFile,
+  destroyVault,
   testVaultPath,
   tmpConfigFilePath,
 } from '../utils/testing'
@@ -10,14 +12,18 @@ import { action } from './stats'
 
 describe('Command: stats', () => {
   let config: Config | null = null
-  beforeEach(async () => {
-    await destroyConfigMockFile(tmpConfigFilePath)
+  beforeEach(() => {
+    destroyConfigMockFile(tmpConfigFilePath)
     config = createDefaultConfig(tmpConfigFilePath) as Config
-    await createTmpVault(testVaultPath)
+    createTmpVault(testVaultPath)
   })
 
-  afterEach(async () => {
-    await destroyConfigMockFile(tmpConfigFilePath)
+  afterEach(() => {
+    destroyConfigMockFile(tmpConfigFilePath)
+  })
+
+  after(() => {
+    destroyVault(testVaultPath)
   })
 
   it('should display stats for vaults and plugins', async () => {

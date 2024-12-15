@@ -1,7 +1,9 @@
 import { expect } from 'chai'
+import { after } from 'mocha'
 import {
   createTmpVault,
   destroyConfigMockFile,
+  destroyVault,
   testVaultName,
   testVaultPath,
   tmpConfigFilePath,
@@ -10,14 +12,18 @@ import { createDefaultConfig } from './config'
 import { action } from './run'
 
 describe('Command: run', () => {
-  beforeEach(async () => {
-    await destroyConfigMockFile(tmpConfigFilePath)
+  beforeEach(() => {
+    destroyConfigMockFile(tmpConfigFilePath)
     createDefaultConfig(tmpConfigFilePath)
-    await createTmpVault(testVaultPath)
+    createTmpVault(testVaultPath)
   })
 
-  afterEach(async () => {
-    await destroyConfigMockFile(tmpConfigFilePath)
+  afterEach(() => {
+    destroyConfigMockFile(tmpConfigFilePath)
+  })
+
+  after(() => {
+    destroyVault(testVaultPath)
   })
 
   it('should fail with invalid command', async () => {

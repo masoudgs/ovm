@@ -10,12 +10,12 @@ import { safeLoadConfig } from './config'
 const tmpConfigFilePath = getTmpConfigFilePath()
 
 describe('Command: config init', () => {
-  beforeEach(async () => {
-    await destroyConfigMockFile(tmpConfigFilePath)
+  beforeEach(() => {
+    destroyConfigMockFile(tmpConfigFilePath)
   })
 
-  afterEach(async () => {
-    await destroyConfigMockFile(tmpConfigFilePath)
+  afterEach(() => {
+    destroyConfigMockFile(tmpConfigFilePath)
   })
 
   it('should create a config file and fail for second attempt', async () => {
@@ -39,5 +39,5 @@ describe('Command: config init', () => {
     }
   })
 
-  it.skip('should throw an error if opening config fail forbidden', async () => {})
+  // it.skip('should throw an error if opening config fail forbidden', async () => {})
 })

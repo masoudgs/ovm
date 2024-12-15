@@ -1,4 +1,5 @@
 import { checkbox } from '@inquirer/prompts'
+import fse from 'fs-extra'
 import { readdir, readFile, rm, writeFile } from 'fs/promises'
 import { vaultPathToPluginsPath } from 'obsidian-utils'
 import { Plugin } from '../services/config'
@@ -54,6 +55,13 @@ export const modifyCommunityPlugins = async (
   childLogger.debug(`Modify community plugins json`)
 
   const communityPluginsDir = `${vaultPath}/.obsidian/community-plugins.json`
+
+  const communityPluginsDirExists = await fse.exists(communityPluginsDir)
+
+  if (!communityPluginsDirExists) {
+    await writeFile(communityPluginsDir, JSON.stringify([]))
+  }
+
   const content = await readFile(communityPluginsDir)
   let plugins = JSON.parse(content.toString()) as string[]
 

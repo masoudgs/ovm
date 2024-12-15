@@ -31,16 +31,11 @@ export type ReservedVariables = {
 
 export type InitFlags = Record<string, unknown>
 
-export interface StagePlugin {
-  repo: string
-  version: string
-}
-
 export interface PrunedPlugin {
   id: string
 }
 
-export type StagedPlugins = Array<StagePlugin>
+export type StagedPlugins = Array<Pick<Plugin, 'id' | 'repo' | 'version'>>
 
 export type InstalledPlugins = Record<string, Array<string>>
 
