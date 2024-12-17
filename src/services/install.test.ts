@@ -16,7 +16,9 @@ import {
   createDefaultConfig,
   safeLoadConfig,
 } from './config'
-import { installVaultIterator } from './install'
+import installService from './install'
+
+const { installVaultIterator } = installService
 
 describe('Command: install', () => {
   before(() => {

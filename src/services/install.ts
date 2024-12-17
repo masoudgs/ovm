@@ -170,6 +170,5 @@ const action = async (
 
 export default {
   action,
-  installPluginsInVaults,
   installVaultIterator,
 }
