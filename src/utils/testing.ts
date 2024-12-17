@@ -46,7 +46,7 @@ export const createTmpVault = async (vaultPath: string) => {
 }
 
 export const tmpConfigFilePath = getTmpConfigFilePath()
-export const testVaultName = 'test'
+export const testVaultName = `test-${Date.now()}`
 export const testVaultPath = `${tmpdir()}/${testVaultName}`
 export const testCommonFlags = {
   debug: false,

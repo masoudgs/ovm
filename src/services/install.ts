@@ -23,7 +23,7 @@ import { PluginNotFoundInRegistryError } from '../utils/errors'
 import { logger } from '../utils/logger'
 import { Config, safeLoadConfig, writeConfig } from './config'
 
-export const installVaultIterator = async (
+const installVaultIterator = async (
   vault: Vault,
   config: Config,
   flags: FactoryFlagsWithVaults<InstallFlags>,
@@ -77,8 +77,6 @@ export const installVaultIterator = async (
         const updatedConfig = { ...config, plugins: [...newPlugins] }
         writeConfig(updatedConfig, flags.config)
       }
-
-      childLogger.info(`Installed plugin`)
     } catch (error) {
       const failedPlugin = {
         ...stagePlugin,
@@ -173,4 +171,5 @@ const action = async (
 export default {
   action,
   installPluginsInVaults,
+  installVaultIterator,
 }

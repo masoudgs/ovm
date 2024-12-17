@@ -6,6 +6,7 @@ import {
   FactoryFlagsWithVaults,
   PruneCommandCallback,
   PruneCommandIterator,
+  PruneCommandIteratorResult,
   PruneFlags,
   PrunePluginVaultOpts,
 } from '../types/commands'
@@ -43,39 +44,59 @@ export const action = async (
   const selectedVaults = await vaultsSelector(vaults)
   const vaultsWithConfig = selectedVaults.map((vault) => ({ vault, config }))
 
-  const prunePluginsIterator = async (opts: PrunePluginVaultOpts) => {
-    const { vault, config } = opts
-    const childLogger = logger.child({ vault })
+  eachSeries(
+    vaultsWithConfig,
+    (opts) => prunePluginsIterator(opts, iterator),
+    (error) => {
+      if (error) {
+        logger.debug('Error pruning plugins', { error })
+        callback({ success: false, error })
+      } else {
+        callback({ success: true })
+      }
+    },
+  )
+}
 
-    if (!config.plugins.length) {
-      return
-    }
+/**
+ * Command iterator for the prune command.
+ *
+ * @param {PrunePluginVaultOpts} opts - The options for the prune command.
+ * @param {PruneCommandIterator} [iterator=() => {}] - Optional iterator function for processing each vault.
+ * @returns {Promise<PruneCommandIteratorResult>} - A promise that resolves when the action is complete.
+ */
+export const prunePluginsIterator = async (
+  opts: PrunePluginVaultOpts,
+  iterator?: PruneCommandIterator,
+): Promise<PruneCommandIteratorResult> => {
+  const { vault, config } = opts
+  const childLogger = logger.child({ vault })
+  const result: PruneCommandIteratorResult = { prunedPlugins: [] }
 
-    const installedPlugins = await listInstalledPlugins(vault.path)
-    const referencedPlugins = config.plugins.map(({ id }) => id)
-    const toBePruned = installedPlugins.filter(
-      ({ id }) => !referencedPlugins.includes(id),
-    )
-
-    for (const plugin of toBePruned) {
-      childLogger.debug(`Pruning plugin`, { plugin })
-      await removePluginDir(plugin.id, vault.path)
-    }
-
-    childLogger.debug(`Pruned ${toBePruned.length} `)
-    logger.info(`Pruned ${toBePruned.length} plugins`, { vault })
-
-    if (iterator) {
-      return iterator({ prunedPlugins: toBePruned })
-    }
+  if (!config.plugins.length) {
+    return { prunedPlugins: [] }
   }
 
-  eachSeries(vaultsWithConfig, prunePluginsIterator, (error) => {
-    if (error) {
-      logger.debug('Error pruning plugins', { error })
-      callback({ success: false, error })
-    } else {
-      callback({ success: true })
-    }
+  const installedPlugins = await listInstalledPlugins(vault.path)
+  const referencedPlugins = config.plugins.map(({ id }) => id)
+  const toBePruned = installedPlugins.filter(
+    ({ id }) => !referencedPlugins.includes(id),
+  )
+
+  for (const plugin of toBePruned) {
+    await removePluginDir(plugin.id, vault.path)
+  }
+
+  childLogger.info(`Pruned ${toBePruned.length} plugins`, {
+    vault,
+    plugins: toBePruned.map(({ id }) => id),
   })
+
+  result.prunedPlugins = toBePruned
+
+  if (iterator) {
+    iterator(result)
+  }
+
+  return result
 }

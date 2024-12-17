@@ -20,6 +20,11 @@ export const removePluginDir = async (pluginId: string, vaultPath: string) => {
 
 export const listInstalledPlugins = async (vaultPath: string) => {
   const pluginPath = vaultPathToPluginsPath(vaultPath)
+
+  if (!(await fse.exists(pluginPath))) {
+    return []
+  }
+
   const plugins = await readdir(pluginPath)
   return plugins.map((plugin) => ({ id: plugin }))
 }
@@ -60,6 +65,7 @@ export const modifyCommunityPlugins = async (
 
   if (!communityPluginsDirExists) {
     await writeFile(communityPluginsDir, JSON.stringify([]))
+    return
   }
 
   const content = await readFile(communityPluginsDir)
