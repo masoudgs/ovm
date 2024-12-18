@@ -36,7 +36,7 @@ describe('Command: uninstall', () => {
     destroyVault(testVaultPath)
   })
 
-  it.skip('should perform uninstallation successfully', async () => {
+  it('should perform uninstallation successfully', async () => {
     await createTmpVault(testVaultPath)
     createDefaultConfig(
       tmpConfigFilePath,
