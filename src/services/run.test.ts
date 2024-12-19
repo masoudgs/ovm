@@ -27,7 +27,6 @@ describe('Command: run', () => {
 
   after(() => {
     destroyVault(testVaultPath)
-    destroyConfigMockFile(tmpConfigFilePath)
   })
 
   const executedTasks = {}
