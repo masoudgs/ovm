@@ -67,12 +67,11 @@ describe('Command: prune', () => {
           'disable',
         )
 
-        // Wait for the plugins to be installed
         await setTimeout(100)
 
-        const pruneResult = await prunePluginsIterator({
-          vault,
-          config: { ...config, plugins: [plugin4] },
+        const pruneResult = await prunePluginsIterator(vault, {
+          ...config,
+          plugins: [plugin4],
         })
 
         expect(pruneResult?.prunedPlugins).to.have.lengthOf(1)
@@ -84,10 +83,10 @@ describe('Command: prune', () => {
 
   it('should prune only if plugins directory exists', async () => {
     createTmpVault(testVaultPath)
-    const result = await prunePluginsIterator({
-      vault: { path: testVaultPath, name: testVaultName },
-      config: { plugins: [plugin3] },
-    })
+    const result = await prunePluginsIterator(
+      { path: testVaultPath, name: testVaultName },
+      { plugins: [plugin3] },
+    )
 
     expect(result.prunedPlugins).to.have.lengthOf(0)
   })
