@@ -44,12 +44,10 @@ describe('Command: install', () => {
 
     for (const vault of selectedVaults) {
       if (config) {
-        const result = await installVaultIterator(
-          vault,
-          config as Config,
-          { ...testCommonWithVaultPathFlags, enable: true },
-          false,
-        )
+        const result = await installVaultIterator(vault, config as Config, {
+          ...testCommonWithVaultPathFlags,
+          enable: true,
+        })
         expect(result.installedPlugins[0].id).to.be.equal(config?.plugins[0].id)
         expect(result.failedPlugins.length).to.equal(0)
         expect(result.reinstallPlugins.length).to.equal(0)
@@ -69,7 +67,6 @@ describe('Command: install', () => {
       selectedVaults[0],
       ConfigSchema.parse({ plugins: [{ id: pluginId }] }),
       { ...testCommonWithVaultPathFlags, enable: true, path: testVaultPath },
-      false,
     )
 
     expect(result.installedPlugins.length).to.equal(0)

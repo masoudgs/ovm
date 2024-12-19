@@ -26,7 +26,7 @@ const installVaultIterator = async (
   vault: Vault,
   config: Config,
   flags: FactoryFlagsWithVaults<InstallFlags>,
-  specific: boolean,
+  specific: boolean = false,
 ) => {
   const installedPlugins: StagedPlugins = []
   const failedPlugins: StagedPlugins = []
