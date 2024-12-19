@@ -1,4 +1,3 @@
-import { eachSeries } from 'async'
 import {
   installPluginFromGithub,
   isPluginInstalled,
@@ -10,7 +9,7 @@ import {
   handleExceedRateLimitError,
 } from '../providers/github'
 import { modifyCommunityPlugins } from '../providers/plugins'
-import { loadVaults, vaultsSelector } from '../providers/vaults'
+import { loadVaults, runOnVaults, vaultsSelector } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   InstallArgs,
@@ -101,7 +100,7 @@ const installVaultIterator = async (
   return result
 }
 
-const installPluginsInVaults = async (
+const installPluginsInVaults = (
   vaults: Vault[],
   config: Config,
   flags: FactoryFlagsWithVaults<InstallFlags>,
@@ -109,8 +108,9 @@ const installPluginsInVaults = async (
   iterator: InstallCommandIterator,
   callback: InstallCommandCallback,
 ) => {
-  return eachSeries(
+  return runOnVaults(
     vaults,
+    flags,
     (vault) => installVaultIterator(vault, config, flags, specific),
     (error) => {
       if (error) {
@@ -158,7 +158,7 @@ const action = async (
     ? { plugins: [{ id: args.pluginId }] }
     : config
 
-  await installPluginsInVaults(
+  return installPluginsInVaults(
     selectedVaults,
     configWithPlugins,
     flags,

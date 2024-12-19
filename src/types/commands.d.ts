@@ -10,6 +10,7 @@ export type CommonFlags = {
 
 export type CommonFlagsWithPath = CommonFlags & {
   path: string
+  async: boolean
 }
 
 export type FactoryFlags<T> = CommonFlags & T
