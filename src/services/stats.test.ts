@@ -1,20 +1,28 @@
 import { expect } from 'chai'
 import { after } from 'mocha'
+import { loadVaults, vaultsSelector } from '../providers/vaults'
+import { plugin1 } from '../utils/fixtures/plugins'
 import {
   createTmpVault,
   destroyConfigMockFile,
   destroyVault,
+  testCommonWithVaultPathFlags,
   testVaultPath,
   tmpConfigFilePath,
 } from '../utils/testing'
-import { Config, createDefaultConfig } from './config'
-import { action } from './stats'
+import { Config, ConfigSchema, createDefaultConfig } from './config'
+import statsService from './stats'
+
+import { setTimeout } from 'timers/promises'
+import installService from './install'
+
+const { installVaultIterator } = installService
+const { statsVaultIterator } = statsService
 
 describe('Command: stats', () => {
-  let config: Config | null = null
   beforeEach(() => {
     destroyConfigMockFile(tmpConfigFilePath)
-    config = createDefaultConfig(tmpConfigFilePath) as Config
+    createDefaultConfig(tmpConfigFilePath) as Config
     createTmpVault(testVaultPath)
   })
 
@@ -26,27 +34,45 @@ describe('Command: stats', () => {
     destroyVault(testVaultPath)
   })
 
-  it('should display stats for vaults and plugins', async () => {
-    await action(
-      {},
-      {
-        config: tmpConfigFilePath,
-        debug: false,
-        timestamp: false,
-        path: testVaultPath,
-        output: 'json',
-      },
-      (iterated) => {
-        expect(iterated).to.not.be.undefined
-      },
-      (result) => {
-        expect(result).to.have.property('totalStats')
-        expect(result).to.have.property('installedPlugins')
-        expect(result.totalStats?.totalVaults).to.be.equal(1)
-        expect(result.totalStats?.totalPlugins).to.be.equal(
-          config?.plugins.length,
-        )
-      },
+  it('should display stats for vaults and 0 plugins', async () => {
+    const vaults = await loadVaults(testVaultPath)
+    const selectedVaults = await vaultsSelector(vaults)
+    const installedPlugins = {}
+    const result = await statsVaultIterator(
+      selectedVaults[0],
+      ConfigSchema.parse({ plugins: [] }),
+      installedPlugins,
     )
+
+    expect(result.totalInstalledPlugins).to.be.equal(0)
+    expect(Object.keys(installedPlugins).length).to.be.equal(0)
+  })
+
+  it('should display stats for vaults and 1 plugin', async () => {
+    const vaults = await loadVaults(testVaultPath)
+    const selectedVaults = await vaultsSelector(vaults)
+
+    await installVaultIterator(
+      selectedVaults[0],
+      ConfigSchema.parse({ plugins: [plugin1] }),
+      { ...testCommonWithVaultPathFlags, enable: true },
+    )
+
+    await setTimeout(1000)
+
+    const installedPlugins = {}
+
+    const result = await statsVaultIterator(
+      selectedVaults[0],
+      ConfigSchema.parse({ plugins: [plugin1] }),
+      installedPlugins,
+    )
+
+    console.log('installedPlugins', installedPlugins)
+    expect(result.totalInstalledPlugins).to.be.equal(1)
+
+    for (const key in installedPlugins) {
+      expect(key).to.match(new RegExp(`${plugin1.id}@${plugin1.version}`))
+    }
   })
 })

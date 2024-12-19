@@ -98,6 +98,11 @@ export interface ExecuteCustomCommandCallbackResult {
   sortedTaskExecutedOnVaults: CommandsExecutedOnVaults
 }
 
+export type StatsCommandIteratorResult =
+  | Record<string, unknown>
+  | ExecuteCustomCommandResult
+export type StatsCommandIterator = (_result: StatsCommandIteratorResult) => void
+
 export type StatsCommandCallbackResult = CommandCallbackBaseResult & {
   totalStats?: {
     totalVaults: number
@@ -105,6 +110,8 @@ export type StatsCommandCallbackResult = CommandCallbackBaseResult & {
   }
   installedPlugins?: InstalledPlugins
 }
+
+export type StatsCommandCallback = (_result: StatsCommandCallbackResult) => void
 
 export interface CommandVault {
   vault: Vault
