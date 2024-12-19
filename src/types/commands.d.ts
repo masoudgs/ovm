@@ -10,7 +10,7 @@ export type CommonFlags = {
 
 export type CommonFlagsWithPath = CommonFlags & {
   path: string
-  async: boolean
+  async?: boolean
 }
 
 export type FactoryFlags<T> = CommonFlags & T
@@ -23,6 +23,7 @@ export type CommandsExecutedOnVaults = Record<
     success: null | boolean
     duration: string
     error: null | Error | string
+    stdout?: string
   }
 >
 export type CommandOnVault = (_vault: Vault, ..._args: string[]) => string
@@ -163,3 +164,11 @@ export type UninstallCommandCallbackResult = CommandCallbackBaseResult
 export type UninstallCommandCallback = (
   _result: UninstallCommandCallbackResult,
 ) => void
+
+export type RunCommandTaskResult = CommandsExecutedOnVaults[0]
+export type RunCommandIterator = (_result: RunCommandTaskResult) => void
+export type RunCommandIteratorResult = RunCommandTaskResult
+
+export type RunCommandCallbackResult = CommandCallbackBaseResult &
+  ExecuteCustomCommandCallbackResult
+export type RunCommandCallback = (_result: RunCommandCallbackResult) => void
