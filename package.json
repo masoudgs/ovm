@@ -128,7 +128,7 @@
       "pnpm run lint",
       "pnpm run format:write"
     ],
-    "*.{md}": [
+    "*.md": [
       "pnpm run format:write"
     ]
   },
