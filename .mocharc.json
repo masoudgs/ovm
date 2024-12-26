@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/mocharc.json",
-  "import": ["tsx"],
+  "require": "tsx",
   "reporter": "mocha-junit-reporter",
   "reporter-option": ["mochaFile=coverage/junit.xml"],
   "timeout": 5000,
