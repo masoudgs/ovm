@@ -16,7 +16,6 @@ jobs:
           - 'windows-latest'
           - 'macos-latest'
         node_version:
-          - '>=18.0.0'
           - 'lts/*'
       fail-fast: false
       max-parallel: 1
