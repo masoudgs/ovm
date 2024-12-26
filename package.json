@@ -118,7 +118,9 @@
     "overrides": {
       "fast-xml-parser@<4.4.1": ">=4.4.1",
       "eslint>ajv": "6",
-      "whatwg-url@<6.0.0": ">=14.0.0"
+      "whatwg-url@<6.0.0": ">=14.0.0",
+      "micromatch@<4.0.8": ">=4.0.8",
+      "cross-spawn@>=7.0.0 <7.0.5": ">=7.0.5"
     }
   },
   "lint-staged": {
