@@ -1,22 +1,22 @@
 import { expect } from 'chai'
 import fs from 'fs'
-import { destroyConfigMockFile, getTmpConfigFilePath } from '../utils/testing'
-import { ConfigSchema, createDefaultConfig, safeLoadConfig } from './config'
-
-const tmpConfigFilePath = getTmpConfigFilePath()
+import { tmpdir } from 'os'
+import path from 'path'
+import { OVM_CONFIG_FILENAME } from '../utils/constants'
+import { destroyVault, setupVault } from '../utils/testing'
+import { ConfigSchema, safeLoadConfig } from './config'
 
 describe('Config', () => {
-  beforeEach(() => {
-    destroyConfigMockFile(tmpConfigFilePath)
-  })
-  it("should load config from user's home dir", async () => {
-    const sampleDefaultConfig = ConfigSchema.parse({})
-    createDefaultConfig(tmpConfigFilePath)
-    const config = await safeLoadConfig(tmpConfigFilePath)
+  it('should load config from path', async () => {
+    const sampleDefaultConfig = ConfigSchema.parse({ plugins: [] })
+    const { vault, config } = setupVault(sampleDefaultConfig)
+    const loadedConfig = await safeLoadConfig(config.path)
 
-    expect(config.success).to.be.true.equal(true)
-    expect(config.error).to.be.undefined.equal(undefined)
-    expect(config.data).to.deep.equal(sampleDefaultConfig)
+    expect(loadedConfig.success).to.be.true.equal(true)
+    expect(loadedConfig.error).to.be.undefined.equal(undefined)
+    expect(loadedConfig.data).to.deep.equal(sampleDefaultConfig)
+
+    destroyVault(vault.path)
   })
 
   it("should throw an error if the config file doesn't exist", async () => {
@@ -24,28 +24,38 @@ describe('Config', () => {
       const { error } = await safeLoadConfig('non-existent-file')
       throw error
     } catch (error) {
-      expect(error).to.be.an('error')
+      expect((error as Error)?.message).to.include('Config file not found')
     }
   })
 
   it('should throw an error if the config file is not JSON', async () => {
-    fs.writeFileSync(tmpConfigFilePath, 'invalid content')
+    const vaultName = `ovm-test-vault-${Date.now()}`
+    const vaultPath = path.join(tmpdir(), vaultName)
+    const configFilePath = path.join(vaultPath, OVM_CONFIG_FILENAME)
+
+    fs.mkdirSync(vaultPath)
+    fs.writeFileSync(configFilePath, 'invalid content')
+
     try {
-      const { error } = await safeLoadConfig(tmpConfigFilePath)
+      const { error } = await safeLoadConfig(configFilePath)
       throw error
     } catch (error) {
       const typedError = error as Error
       expect(typedError.message).to.include('Invalid JSON format')
     }
+
+    destroyVault(vaultPath)
   })
 
   it('should throw an error if the config file is invalid', async () => {
-    createDefaultConfig(tmpConfigFilePath, {
+    const { vault, config } = setupVault({
       // @ts-expect-error To create an invalid config
       invalidKey: 'invalidValue',
     })
 
-    const { error } = await safeLoadConfig(tmpConfigFilePath)
+    const { error } = await safeLoadConfig(config.path)
     expect(error?.message).to.include('Invalid config file')
+
+    destroyVault(vault.path)
   })
 })
