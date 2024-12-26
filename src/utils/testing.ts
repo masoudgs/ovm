@@ -1,18 +1,17 @@
 import { existsSync } from 'fs'
 import fse from 'fs-extra'
 import fsp from 'fs/promises'
-import nock from 'nock'
 import { platform, tmpdir } from 'os'
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { StagedPlugins } from '../types/commands'
+import { Config, ConfigSchema, createDefaultConfig } from '../services/config'
 import { OVM_CONFIG_FILENAME } from './constants'
-export const getTmpConfigFilePath = () => {
+export const getTestConfigFilePath = (vaultPath: string) => {
   if (platform() === 'win32') {
-    return path.win32.join(tmpdir(), OVM_CONFIG_FILENAME)
+    return path.win32.join(vaultPath, OVM_CONFIG_FILENAME)
   }
 
-  return path.join(tmpdir(), OVM_CONFIG_FILENAME)
+  return path.join(vaultPath, OVM_CONFIG_FILENAME)
 }
 
 export const destroyConfigMockFile = (path: string) => {
@@ -23,7 +22,11 @@ export const destroyConfigMockFile = (path: string) => {
   }
 }
 
-export const createTmpVault = async (vaultPath: string) => {
+export const setupVault = (overrideConfig?: Config) => {
+  const vaultName = `ovm-test-vault-${Date.now()}`
+  const vaultPath = path.join(tmpdir(), vaultName)
+  const configFilePath = path.join(vaultPath, OVM_CONFIG_FILENAME)
+
   const normalizedPath = path.normalize(vaultPath)
   const obsidianDir = path.resolve(normalizedPath, '.obsidian')
   if (normalizedPath && !existsSync(normalizedPath)) {
@@ -36,48 +39,43 @@ export const createTmpVault = async (vaultPath: string) => {
   )
 
   if (!fse.pathExistsSync(normalizedVaultCommunityPluginsPath)) {
-    await fse.writeFile(
+    fse.writeFileSync(
       pathToFileURL(normalizedVaultCommunityPluginsPath),
       JSON.stringify([]),
     )
   }
 
-  return normalizedPath
+  createDefaultConfig(
+    configFilePath,
+    overrideConfig ?? ConfigSchema.parse({ plugins: [] }),
+  )
+
+  return {
+    vault: { name: vaultName, path: normalizedPath },
+    config: { path: configFilePath },
+  }
 }
 
-export const tmpConfigFilePath = getTmpConfigFilePath()
-export const testVaultName = `test-${Date.now()}`
-export const testVaultPath = `${tmpdir()}/${testVaultName}`
-export const testCommonFlags = {
+export const getTestCommonFlags = (configFilePath: string) => ({
   debug: false,
   timestamp: false,
-  config: tmpConfigFilePath,
-}
-export const testCommonWithVaultPathFlags = {
+  config: configFilePath,
+})
+export const getTestCommonWithVaultPathFlags = (
+  configFilePath: string,
+  vaultPath: string,
+) => ({
   debug: false,
   timestamp: false,
-  config: tmpConfigFilePath,
-  path: testVaultPath,
-}
+  config: configFilePath,
+  path: vaultPath,
+})
 
 export const destroyVault = (vaultPath: string) => {
   const normalizedPath = path.normalize(vaultPath)
 
   if (normalizedPath && existsSync(normalizedPath)) {
     fse.emptyDirSync(normalizedPath)
-    fsp.readdir(normalizedPath, { recursive: true })
+    fsp.rmdir(normalizedPath, { recursive: true })
   }
-}
-
-export const setupFetchMockForGithubObsidianPlugins = (
-  plugins: StagedPlugins & Array<{ id: string }>,
-) => {
-  nock(/raw\.githubusercontent\.com/)
-    .get('/obsidianmd/obsidian-releases/master/community-plugins.json')
-    .replyWithFile(
-      200,
-      path.join(__dirname, 'fixtures', 'community-plugins.json'),
-    )
-
-  return plugins
 }

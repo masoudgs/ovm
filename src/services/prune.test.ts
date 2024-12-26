@@ -1,93 +1,73 @@
 import { expect } from 'chai'
-import { afterEach } from 'mocha'
-import { setTimeout } from 'timers/promises'
 import { modifyCommunityPlugins } from '../providers/plugins'
 import { loadVaults, vaultsSelector } from '../providers/vaults'
 import { plugin3, plugin4 } from '../utils/fixtures/plugins'
 import {
-  createTmpVault,
-  destroyConfigMockFile,
   destroyVault,
-  setupFetchMockForGithubObsidianPlugins,
-  testCommonWithVaultPathFlags,
-  testVaultName,
-  testVaultPath,
-  tmpConfigFilePath,
+  getTestCommonWithVaultPathFlags,
+  setupVault,
 } from '../utils/testing'
-import {
-  Config,
-  ConfigSchema,
-  createDefaultConfig,
-  safeLoadConfig,
-} from './config'
+import { Config, ConfigSchema, safeLoadConfig } from './config'
 import installService from './install'
-import { prunePluginsIterator } from './prune'
+import pruneService from './prune'
 
 const { installVaultIterator } = installService
+const { pruneVaultIterator } = pruneService
 
-const [{ id: plugin3Id }] = setupFetchMockForGithubObsidianPlugins([
-  plugin3,
-  plugin4,
-])
+const [{ id: plugin3Id }] = [plugin3, plugin4]
 
 describe('Command: prune', () => {
-  afterEach(() => {
-    destroyVault(testVaultPath)
-    destroyConfigMockFile(tmpConfigFilePath)
-  })
-
   it('should prune plugins successfully', async () => {
-    await createTmpVault(testVaultPath)
-
-    createDefaultConfig(
-      tmpConfigFilePath,
+    const { vault, config } = setupVault(
       ConfigSchema.parse({ plugins: [plugin3, plugin4] }),
     )
+    const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
+      config.path,
+      vault.path,
+    )
 
-    const vaults = await loadVaults(testVaultPath)
+    const vaults = await loadVaults(vault.path)
     const selectedVaults = await vaultsSelector(vaults)
-    const { data: config } = await safeLoadConfig(tmpConfigFilePath)
+    const { data: loadedConfig } = await safeLoadConfig(config.path)
 
-    for (const vault of selectedVaults) {
-      if (config) {
-        const installResult = await installVaultIterator(
-          vault,
-          config as Config,
-          { ...testCommonWithVaultPathFlags, enable: true },
-          false,
-        )
+    const installResult = await installVaultIterator(
+      selectedVaults[0],
+      loadedConfig as Config,
+      { ...testCommonWithVaultPathFlags, enable: true },
+      false,
+    )
 
-        expect(installResult.installedPlugins[0].id).to.be.equal(
-          config?.plugins[0].id,
-        )
+    expect(installResult.installedPlugins[0].id).to.be.equal(
+      loadedConfig?.plugins[0].id,
+    )
 
-        await modifyCommunityPlugins(
-          { id: plugin3Id },
-          testVaultPath,
-          'disable',
-        )
+    await modifyCommunityPlugins({ id: plugin3Id }, vault.path, 'disable')
 
-        await setTimeout(100)
+    const { prunedPlugins } = await pruneVaultIterator(selectedVaults[0], {
+      ...config,
+      plugins: [plugin4],
+    })
 
-        const pruneResult = await prunePluginsIterator(vault, {
-          ...config,
-          plugins: [plugin4],
-        })
-
-        expect(pruneResult?.prunedPlugins).to.have.lengthOf(1)
-        expect(pruneResult?.prunedPlugins?.some(({ id }) => plugin3Id === id))
-          .to.be.true
-      }
-    }
-  })
+    expect(prunedPlugins).to.have.lengthOf(1)
+    expect(prunedPlugins?.some(({ id }) => plugin3Id === id)).to.be.true
+    destroyVault(vault.path)
+  }).timeout(6000)
 
   it('should prune only if plugins directory exists', async () => {
-    createTmpVault(testVaultPath)
-    const result = await prunePluginsIterator(
-      { path: testVaultPath, name: testVaultName },
+    const { vault, config } = setupVault(
+      ConfigSchema.parse({ plugins: [plugin3] }),
+    )
+    const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
+      config.path,
+      vault.path,
+    )
+
+    const result = await pruneVaultIterator(
+      { ...testCommonWithVaultPathFlags, path: vault.path, name: vault.name },
       { plugins: [plugin3] },
     )
 
     expect(result.prunedPlugins).to.have.lengthOf(0)
+    destroyVault(vault.path)
   })
 })

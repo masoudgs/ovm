@@ -13,58 +13,14 @@ import { logger } from '../utils/logger'
 import { Config, safeLoadConfig } from './config'
 
 /**
- * Main action method for the prune command.
- * Loads vaults, selects vaults, loads configuration, and prunes unused plugins.
- * @param {ArgInput} _args
- * @param {FactoryFlagsWithVaults<PruneFlags>} flags
- * @param {PruneCommandIterator} [iterator=() => {}]
- * @param {PruneCommandCallback} [callback=() => {}]
- * @returns {Promise<void>}
- */
-export const action = async (
-  _args: ArgInput,
-  flags: FactoryFlagsWithVaults<PruneFlags>,
-  iterator: PruneCommandIterator,
-  callback: PruneCommandCallback,
-): Promise<void> => {
-  const {
-    success: loadConfigSuccess,
-    data: config,
-    error: loadConfigError,
-  } = await safeLoadConfig(flags.config)
-
-  if (!loadConfigSuccess) {
-    logger.error('Failed to load config', { error: loadConfigError })
-    process.exit(1)
-  }
-
-  const vaults = await loadVaults(flags.path)
-  const selectedVaults = await vaultsSelector(vaults)
-
-  runOnVaults(
-    selectedVaults,
-    flags,
-    (vault) => prunePluginsIterator(vault, config, iterator),
-    (error) => {
-      if (error) {
-        logger.error('Pruning plugins failed', { error })
-        callback({ success: false, error })
-      } else {
-        callback({ success: true })
-      }
-    },
-  )
-}
-
-/**
- * Command iterator for the prune command.
+ * Command vault iterator for the prune command.
  *
  * @param {Vault} vault - The options for the prune command.
  * @param {Config} config - The configuration object.
  * @param {PruneCommandIterator} [iterator=() => {}] - Optional iterator function for processing each vault.
  * @returns {Promise<PruneCommandIteratorResult>} - A promise that resolves when the action is complete.
  */
-export const prunePluginsIterator = async (
+const pruneVaultIterator = async (
   vault: Vault,
   config: Config,
   iterator?: PruneCommandIterator,
@@ -98,4 +54,53 @@ export const prunePluginsIterator = async (
   }
 
   return result
+}
+
+/**
+ * Main action method for the prune command.
+ * Loads vaults, selects vaults, loads configuration, and prunes unused plugins.
+ * @param {ArgInput} _args
+ * @param {FactoryFlagsWithVaults<PruneFlags>} flags
+ * @param {PruneCommandIterator} [iterator=() => {}]
+ * @param {PruneCommandCallback} [callback=() => {}]
+ * @returns {Promise<void>}
+ */
+const action = async (
+  _args: ArgInput,
+  flags: FactoryFlagsWithVaults<PruneFlags>,
+  iterator: PruneCommandIterator,
+  callback: PruneCommandCallback,
+): Promise<void> => {
+  const {
+    success: loadConfigSuccess,
+    data: config,
+    error: loadConfigError,
+  } = await safeLoadConfig(flags.config)
+
+  if (!loadConfigSuccess) {
+    logger.error('Failed to load config', { error: loadConfigError })
+    process.exit(1)
+  }
+
+  const vaults = await loadVaults(flags.path)
+  const selectedVaults = await vaultsSelector(vaults)
+
+  runOnVaults(
+    selectedVaults,
+    flags,
+    (vault) => pruneVaultIterator(vault, config, iterator),
+    (error) => {
+      if (error) {
+        logger.error('Pruning plugins failed', { error })
+        callback({ success: false, error })
+      } else {
+        callback({ success: true })
+      }
+    },
+  )
+}
+
+export default {
+  action,
+  pruneVaultIterator,
 }
