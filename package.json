@@ -82,7 +82,6 @@
     "@istanbuljs/nyc-config-typescript": "1.0.2",
     "@oclif/prettier-config": "0.2.1",
     "@oclif/test": "4.1.4",
-    "@total-typescript/ts-reset": "0.5.1",
     "@types/async": "3.2.24",
     "@types/cacache": "17.0.2",
     "@types/chai": "4.3.17",
