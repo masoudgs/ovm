@@ -1,6 +1,8 @@
 import { Args, Flags, flush } from '@oclif/core'
 import { FactoryCommandWithVaults } from '../../providers/command'
-import { action } from '../../services/install'
+import installService from '../../services/install'
+
+const { action } = installService
 
 /**
  * Install command installs specified plugins in vaults.

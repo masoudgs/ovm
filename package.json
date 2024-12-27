@@ -3,7 +3,7 @@
   "description": "Obsidian Vaults Manager",
   "type": "commonjs",
   "version": "0.5.0",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "author": "Masoud Ghorbani",
   "homepage": "https://github.com/msudgh/ovm",
   "bugs": "https://github.com/msudgh/ovm/issues",
