@@ -32,7 +32,7 @@ jobs:
           node-version: ${{ matrix.node_version }}
           cache: 'pnpm'
       - run: pnpm install -D tap-junit
-      - run: pnpm run test:coverage | tap-junit > coverage/junit.xml
+      - run: pnpm run test:coverage | pnpm exec tap-junit > junit.xml
       - name: SonarQube Scan
         if: matrix.os == 'ubuntu-latest'
         uses: SonarSource/sonarqube-scan-action@v4.1.0
@@ -48,5 +48,5 @@ jobs:
         uses: codecov/test-results-action@v1.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage/junit.xml,!./cache
+          files: junit.xml,!./cache
           fail_ci_if_error: true
