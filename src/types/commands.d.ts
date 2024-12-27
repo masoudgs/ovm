@@ -1,6 +1,6 @@
 import { ExecException } from 'child_process'
 import { Vault } from 'obsidian-utils'
-import { Config } from '../services/config'
+import { Config, Plugin } from '../services/config'
 
 export type CommonFlags = {
   debug: boolean
@@ -10,6 +10,7 @@ export type CommonFlags = {
 
 export type CommonFlagsWithPath = CommonFlags & {
   path: string
+  async?: boolean
 }
 
 export type FactoryFlags<T> = CommonFlags & T
@@ -22,6 +23,7 @@ export type CommandsExecutedOnVaults = Record<
     success: null | boolean
     duration: string
     error: null | Error | string
+    stdout?: string
   }
 >
 export type CommandOnVault = (_vault: Vault, ..._args: string[]) => string
@@ -31,16 +33,11 @@ export type ReservedVariables = {
 
 export type InitFlags = Record<string, unknown>
 
-export interface StagePlugin {
-  repo: string
-  version: string
-}
-
 export interface PrunedPlugin {
   id: string
 }
 
-export type StagedPlugins = Array<StagePlugin>
+export type StagedPlugins = Array<Pick<Plugin, 'id' | 'repo' | 'version'>>
 
 export type InstalledPlugins = Record<string, Array<string>>
 
@@ -101,6 +98,11 @@ export interface ExecuteCustomCommandCallbackResult {
   sortedTaskExecutedOnVaults: CommandsExecutedOnVaults
 }
 
+export type StatsCommandIteratorResult =
+  | Record<string, unknown>
+  | ExecuteCustomCommandResult
+export type StatsCommandIterator = (_result: StatsCommandIteratorResult) => void
+
 export type StatsCommandCallbackResult = CommandCallbackBaseResult & {
   totalStats?: {
     totalVaults: number
@@ -108,6 +110,8 @@ export type StatsCommandCallbackResult = CommandCallbackBaseResult & {
   }
   installedPlugins?: InstalledPlugins
 }
+
+export type StatsCommandCallback = (_result: StatsCommandCallbackResult) => void
 
 export interface CommandVault {
   vault: Vault
@@ -126,6 +130,7 @@ export type InitCommandCallback = (_result: InitCommandCallbackResult) => void
 export interface InstallCommandIteratorResult {
   installedPlugins: StagedPlugins
   failedPlugins: StagedPlugins
+  reinstallPlugins: StagedPlugins
 }
 
 export type InstallCommandIterator = (
@@ -147,3 +152,30 @@ export type PruneCommandIterator = (_result: PruneCommandIteratorResult) => void
 export type PruneCommandCallbackResult = CommandCallbackBaseResult
 
 export type PruneCommandCallback = (_result: PruneCommandCallbackResult) => void
+
+export interface UninstalledPlugin {
+  id: string
+}
+
+export interface UninstallCommandIteratorResult {
+  uninstalledPlugins: Array<Plugin>
+  failedPlugins: Array<Plugin>
+}
+
+export type UninstallCommandIterator = (
+  _result: UninstallCommandIteratorResult,
+) => void
+
+export type UninstallCommandCallbackResult = CommandCallbackBaseResult
+
+export type UninstallCommandCallback = (
+  _result: UninstallCommandCallbackResult,
+) => void
+
+export type RunCommandTaskResult = CommandsExecutedOnVaults[0]
+export type RunCommandIterator = (_result: RunCommandTaskResult) => void
+export type RunCommandIteratorResult = RunCommandTaskResult
+
+export type RunCommandCallbackResult = CommandCallbackBaseResult &
+  ExecuteCustomCommandCallbackResult
+export type RunCommandCallback = (_result: RunCommandCallbackResult) => void

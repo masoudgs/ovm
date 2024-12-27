@@ -16,9 +16,9 @@ jobs:
           - 'windows-latest'
           - 'macos-latest'
         node_version:
-          - '>=18.0.0'
           - 'lts/*'
       fail-fast: false
+      max-parallel: 1
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -26,13 +26,13 @@ jobs:
           fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
-          version: 9.5.0
           run_install: true
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
           cache: 'pnpm'
-      - run: pnpm run test:coverage
+      - run: pnpm install -D tap-junit
+      - run: pnpm run test:coverage | pnpm exec tap-junit > junit.xml
       - name: SonarQube Scan
         if: matrix.os == 'ubuntu-latest'
         uses: SonarSource/sonarqube-scan-action@v4.1.0
@@ -48,5 +48,5 @@ jobs:
         uses: codecov/test-results-action@v1.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage/junit.xml,!./cache
+          files: junit.xml,!./cache
           fail_ci_if_error: true

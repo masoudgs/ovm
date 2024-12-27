@@ -1,4 +1,6 @@
 import NodeFetchCache, { FileSystemCache } from 'node-fetch-cache'
+import { GitHubPluginVersion } from 'obsidian-utils'
+import { Plugin } from '../services/config'
 
 // const interceptor = new ClientRequestInterceptor()
 const fetch = NodeFetchCache.create({
@@ -18,6 +20,7 @@ export const handleExceedRateLimitError = (error: unknown) => {
     'message' in error &&
     error.message.search('find') !== -1
   ) {
+    // todo: add a unit test for this
     const apiRateLimitMessage =
       'API rate limit exceeded, Try again later. Check out Github documentation for rate limit.'
     throw new Error(apiRateLimitMessage)
@@ -48,3 +51,6 @@ export const findPluginInRegistry = async (
   const pluginsRegistry = await fetchPlugins()
   return pluginsRegistry.find(({ id }) => id === name)
 }
+
+export const getPluginVersion = (plugin?: Plugin): GitHubPluginVersion =>
+  plugin?.version ?? 'latest'

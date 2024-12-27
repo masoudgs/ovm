@@ -1,23 +1,30 @@
 import { checkbox } from '@inquirer/prompts'
+import fse from 'fs-extra'
 import { readdir, readFile, rm, writeFile } from 'fs/promises'
 import { vaultPathToPluginsPath } from 'obsidian-utils'
 import { Plugin } from '../services/config'
 import { logger } from '../utils/logger'
 
 export const removePluginDir = async (pluginId: string, vaultPath: string) => {
-  const childLogger = logger.child({ pluginId, vaultPath })
   const pluginsPath = vaultPathToPluginsPath(vaultPath)
   const pluginDir = `${pluginsPath}/${pluginId}`
+  const childLogger = logger.child({ pluginsPath, pluginId })
 
-  childLogger.debug(`Remove plugin`, { pluginId, pluginDir, pluginsPath })
+  childLogger.debug(`Remove plugin`)
 
   await rm(pluginDir, { recursive: true, force: true })
+  await modifyCommunityPlugins({ id: pluginId }, vaultPath, 'disable')
 
-  childLogger.info(`Removed plugin`)
+  childLogger.debug(`Removed plugin`)
 }
 
 export const listInstalledPlugins = async (vaultPath: string) => {
   const pluginPath = vaultPathToPluginsPath(vaultPath)
+
+  if (!(await fse.exists(pluginPath))) {
+    return []
+  }
+
   const plugins = await readdir(pluginPath)
   return plugins.map((plugin) => ({ id: plugin }))
 }
@@ -53,6 +60,14 @@ export const modifyCommunityPlugins = async (
   childLogger.debug(`Modify community plugins json`)
 
   const communityPluginsDir = `${vaultPath}/.obsidian/community-plugins.json`
+
+  const communityPluginsDirExists = await fse.exists(communityPluginsDir)
+
+  if (!communityPluginsDirExists) {
+    await writeFile(communityPluginsDir, JSON.stringify([]))
+    return
+  }
+
   const content = await readFile(communityPluginsDir)
   let plugins = JSON.parse(content.toString()) as string[]
 

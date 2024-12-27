@@ -1,75 +1,71 @@
 import { expect } from 'chai'
-import sinon from 'sinon'
+import { loadVaults, vaultsSelector } from '../providers/vaults'
+import { plugin5 } from '../utils/fixtures/plugins'
 import {
-  createTmpVault,
-  destroyConfigMockFile,
   destroyVault,
-  testCommonFlags,
-  testVaultPath,
-  tmpConfigFilePath,
+  getTestCommonWithVaultPathFlags,
+  setupVault,
 } from '../utils/testing'
-import { createDefaultConfig } from './config'
-import { action } from './install'
+import { Config, ConfigSchema, safeLoadConfig } from './config'
+import installService from './install'
 
-const samplePluginId = 'obsidian-linter'
+const { installVaultIterator } = installService
+
 describe('Command: install', () => {
-  beforeEach(async () => {
-    await destroyConfigMockFile(tmpConfigFilePath)
-    await destroyVault(testVaultPath)
-    createDefaultConfig(tmpConfigFilePath)
-  })
-
-  afterEach(async () => {
-    sinon.restore()
-  })
-
   it('should perform installation successfully', async () => {
-    await createTmpVault(testVaultPath)
-    await action(
-      { pluginId: samplePluginId },
-      { ...testCommonFlags, enable: true, path: testVaultPath },
-      (iterator) => {
-        expect(iterator).to.be.an('object')
-        expect(iterator).to.have.property('installedPlugins')
-        expect(iterator).to.have.property('failedPlugins')
-        expect(iterator.installedPlugins).to.be.an('array')
-        expect(iterator.failedPlugins).to.be.an('array')
-        expect(iterator.installedPlugins.length).to.be.greaterThan(0)
-        expect(iterator.failedPlugins.length).to.equal(0)
-        expect(iterator.installedPlugins[0].repo).to.match(
-          new RegExp(samplePluginId),
-        )
-      },
-      (result) => {
-        expect(result).to.be.an('object')
-        expect(result).to.have.property('success')
-        expect(result.success).to.be.true
+    const { vault, config } = setupVault(
+      ConfigSchema.parse({ plugins: [plugin5] }),
+    )
+    const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
+      config.path,
+      vault.path,
+    )
+
+    const vaults = await loadVaults(vault.path)
+    const selectedVaults = await vaultsSelector(vaults)
+    const { data: loadedConfig } = await safeLoadConfig(config.path)
+
+    const result = await installVaultIterator(
+      selectedVaults[0],
+      loadedConfig as Config,
+      {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
       },
     )
+
+    expect(result.installedPlugins[0].id).to.be.equal(
+      loadedConfig?.plugins[0].id,
+    )
+    expect(result.failedPlugins.length).to.equal(0)
+    expect(result.reinstallPlugins.length).to.equal(0)
+
+    destroyVault(vault.path)
   })
 
-  it('should throw PluginNotFoundInRegistryError when plugin is not found', async () => {
-    await createTmpVault(testVaultPath)
+  it('should throw PluginNotFoundInRegistryError when plugin is not found based on testing installVaultIterator', async () => {
     const pluginId = 'nonExistentPluginId'
-
-    await action(
-      { pluginId },
-      { ...testCommonFlags, enable: true, path: testVaultPath },
-      (iterator) => {
-        expect(iterator).to.be.an('object')
-        expect(iterator).to.have.property('installedPlugins')
-        expect(iterator).to.have.property('failedPlugins')
-        expect(iterator.installedPlugins).to.be.an('array')
-        expect(iterator.failedPlugins).to.be.an('array')
-        expect(iterator.installedPlugins.length).to.equal(0)
-        expect(iterator.failedPlugins.length).to.equal(1)
-        expect(iterator.failedPlugins[0].repo).to.equal(pluginId)
-      },
-      (result) => {
-        expect(result).to.be.an('object')
-        expect(result).to.have.property('success')
-        expect(result.success).to.be.false
-      },
+    const { vault, config } = setupVault(
+      ConfigSchema.parse({ plugins: [{ id: pluginId }] }),
     )
+    const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
+      config.path,
+      vault.path,
+    )
+
+    const vaults = await loadVaults(vault.path)
+    const selectedVaults = await vaultsSelector(vaults)
+
+    const result = await installVaultIterator(
+      selectedVaults[0],
+      ConfigSchema.parse({ plugins: [{ id: pluginId }] }),
+      { ...testCommonWithVaultPathFlags, enable: true, path: vault.path },
+    )
+
+    expect(result.installedPlugins.length).to.equal(0)
+    expect(result.failedPlugins.length).to.equal(1)
+    expect(result.failedPlugins[0].id).to.equal(pluginId)
+
+    destroyVault(vault.path)
   })
 })

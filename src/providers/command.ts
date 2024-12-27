@@ -146,7 +146,7 @@ const asyncExecCustomCommand = async (
 ): Promise<Pick<ExecuteCustomCommandResult, 'error'> | string> => {
   return new Promise((resolve, reject) => {
     exec(
-      command,
+      commandInterpolation(vault, command),
       { cwd: runFromVaultDirectoryAsWorkDir ? vault.path : __dirname },
       (error, stdout, stderr) => {
         if (error) {

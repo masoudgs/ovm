@@ -2,8 +2,8 @@
   "name": "ovm",
   "description": "Obsidian Vaults Manager",
   "type": "commonjs",
-  "version": "0.4.6",
-  "license": "MIT",
+  "version": "0.5.0",
+  "license": "GPL-3.0-only",
   "author": "Masoud Ghorbani",
   "homepage": "https://github.com/msudgh/ovm",
   "bugs": "https://github.com/msudgh/ovm/issues",
@@ -21,8 +21,9 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest && pnpm run build:release && pnpm run test:unit",
-    "test:unit": "mocha -R=spec",
-    "test:coverage": "nyc mocha"
+    "test:unit": "mocha",
+    "test:coverage": "nyc mocha",
+    "prepare": "husky"
   },
   "keywords": [
     "obsidian",
@@ -85,7 +86,7 @@
     "@types/async": "3.2.24",
     "@types/cacache": "17.0.2",
     "@types/chai": "4.3.17",
-    "@types/fs-extra": "^11.0.4",
+    "@types/fs-extra": "11.0.4",
     "@types/inquirer": "9.0.7",
     "@types/mocha": "10.0.7",
     "@types/mock-fs": "4.13.4",
@@ -95,10 +96,12 @@
     "chai": "5.1.1",
     "eslint": "9.8.0",
     "eslint-config-prettier": "9.1.0",
-    "fs-extra": "^11.2.0",
+    "fs-extra": "11.2.0",
     "globals": "15.9.0",
+    "husky": "9.1.7",
+    "lint-staged": "15.2.10",
     "mocha": "10.7.3",
-    "mocha-junit-reporter": "^2.2.1",
+    "mocha-junit-reporter": "2.2.1",
     "mock-fs": "5.2.0",
     "nyc": "17.0.0",
     "obsidian": "1.6.6",
@@ -115,7 +118,19 @@
     "overrides": {
       "fast-xml-parser@<4.4.1": ">=4.4.1",
       "eslint>ajv": "6",
-      "whatwg-url@<6.0.0": ">=14.0.0"
+      "whatwg-url@<6.0.0": ">=14.0.0",
+      "micromatch@<4.0.8": ">=4.0.8",
+      "cross-spawn@>=7.0.0 <7.0.5": ">=7.0.5"
     }
-  }
+  },
+  "lint-staged": {
+    "*.{ts,tsx,json,js}": [
+      "pnpm run lint",
+      "pnpm run format:write"
+    ],
+    "*.md": [
+      "pnpm run format:write"
+    ]
+  },
+  "packageManager": "pnpm@9.8.0+sha1.33f415ae4331f9b29a92dd9bbef959b916d65535"
 }

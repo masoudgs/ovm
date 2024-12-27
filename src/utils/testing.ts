@@ -1,27 +1,32 @@
-import { existsSync, writeFileSync } from 'fs'
+import { existsSync } from 'fs'
 import fse from 'fs-extra'
-import { rm } from 'fs/promises'
+import fsp from 'fs/promises'
 import { platform, tmpdir } from 'os'
 import path from 'path'
+import { pathToFileURL } from 'url'
+import { Config, ConfigSchema, createDefaultConfig } from '../services/config'
 import { OVM_CONFIG_FILENAME } from './constants'
-
-export const getTmpConfigFilePath = () => {
+export const getTestConfigFilePath = (vaultPath: string) => {
   if (platform() === 'win32') {
-    return path.win32.join(tmpdir(), OVM_CONFIG_FILENAME)
+    return path.win32.join(vaultPath, OVM_CONFIG_FILENAME)
   }
 
-  return path.join(tmpdir(), OVM_CONFIG_FILENAME)
+  return path.join(vaultPath, OVM_CONFIG_FILENAME)
 }
 
-export const destroyConfigMockFile = async (path: string) => {
+export const destroyConfigMockFile = (path: string) => {
   const normalizedPath = path.normalize('NFC')
 
   if (normalizedPath && existsSync(normalizedPath)) {
-    await rm(normalizedPath, { force: true })
+    fse.rmSync(normalizedPath, { force: true })
   }
 }
 
-export const createTmpVault = async (vaultPath: string) => {
+export const setupVault = (overrideConfig?: Config) => {
+  const vaultName = `ovm-test-vault-${Date.now()}`
+  const vaultPath = path.join(tmpdir(), vaultName)
+  const configFilePath = path.join(vaultPath, OVM_CONFIG_FILENAME)
+
   const normalizedPath = path.normalize(vaultPath)
   const obsidianDir = path.resolve(normalizedPath, '.obsidian')
   if (normalizedPath && !existsSync(normalizedPath)) {
@@ -33,25 +38,44 @@ export const createTmpVault = async (vaultPath: string) => {
     'community-plugins.json',
   )
 
-  if (!existsSync(normalizedVaultCommunityPluginsPath)) {
-    writeFileSync(normalizedVaultCommunityPluginsPath, JSON.stringify([]))
+  if (!fse.pathExistsSync(normalizedVaultCommunityPluginsPath)) {
+    fse.writeFileSync(
+      pathToFileURL(normalizedVaultCommunityPluginsPath),
+      JSON.stringify([]),
+    )
   }
 
-  return normalizedPath
+  createDefaultConfig(
+    configFilePath,
+    overrideConfig ?? ConfigSchema.parse({ plugins: [] }),
+  )
+
+  return {
+    vault: { name: vaultName, path: normalizedPath },
+    config: { path: configFilePath },
+  }
 }
 
-export const tmpConfigFilePath = getTmpConfigFilePath()
-export const testVaultName = 'test'
-export const testVaultPath = `${tmpdir()}/${testVaultName}`
-export const testCommonFlags = {
+export const getTestCommonFlags = (configFilePath: string) => ({
   debug: false,
   timestamp: false,
-  config: tmpConfigFilePath,
-}
+  config: configFilePath,
+})
+export const getTestCommonWithVaultPathFlags = (
+  configFilePath: string,
+  vaultPath: string,
+) => ({
+  debug: false,
+  timestamp: false,
+  config: configFilePath,
+  path: vaultPath,
+})
 
-export const destroyVault = async (vaultPath: string) => {
+export const destroyVault = (vaultPath: string) => {
   const normalizedPath = path.normalize(vaultPath)
+
   if (normalizedPath && existsSync(normalizedPath)) {
-    await rm(normalizedPath, { recursive: true, force: true })
+    fse.emptyDirSync(normalizedPath)
+    fsp.rmdir(normalizedPath, { recursive: true })
   }
 }

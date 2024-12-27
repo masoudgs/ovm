@@ -7,6 +7,10 @@ import { stringToJSONSchema } from '../utils/transformer'
 const PluginSchema = z.object({
   id: z.string(),
   version: z.custom<GitHubPluginVersion>().optional(),
+  repo: z.string().optional(),
+  name: z.string().optional(),
+  author: z.string().optional(),
+  description: z.string().optional(),
 })
 
 export type Plugin = z.infer<typeof PluginSchema>
