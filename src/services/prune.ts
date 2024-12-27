@@ -68,8 +68,8 @@ const pruneVaultIterator = async (
 const action = async (
   _args: ArgInput,
   flags: FactoryFlagsWithVaults<PruneFlags>,
-  iterator: PruneCommandIterator,
-  callback: PruneCommandCallback,
+  iterator: PruneCommandIterator = () => {},
+  callback: PruneCommandCallback = () => {},
 ): Promise<void> => {
   const {
     success: loadConfigSuccess,
