@@ -21,7 +21,7 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest && pnpm run build:release && pnpm run test:unit",
-    "test:unit": "mocha -R=spec",
+    "test:unit": "mocha",
     "test:coverage": "nyc mocha",
     "prepare": "husky"
   },

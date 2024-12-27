@@ -31,7 +31,8 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           cache: 'pnpm'
-      - run: pnpm run test:coverage
+      - run: pnpm install -D tap-junit
+      - run: pnpm run test:coverage | tap-junit > coverage/junit.xml
       - name: SonarQube Scan
         if: matrix.os == 'ubuntu-latest'
         uses: SonarSource/sonarqube-scan-action@v4.1.0

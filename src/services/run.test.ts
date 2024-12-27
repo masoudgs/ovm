@@ -56,7 +56,6 @@ describe('Command: run', () => {
 
   it('should echo path and name of vault by echo command and reserved placeholder {0} {1} and not {10000}', async () => {
     const { vault, config } = setupVault()
-
     const vaults = await loadVaults(vault.path)
     const selectedVaults = await vaultsSelector(vaults)
     const result = await commandVaultIterator(
