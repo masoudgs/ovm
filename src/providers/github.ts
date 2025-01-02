@@ -19,7 +19,6 @@ export const handleExceedRateLimitError = (error: unknown) => {
     'message' in error &&
     error.message.search('find') !== -1
   ) {
-    // todo: add a unit test for this
     const apiRateLimitMessage =
       'API rate limit exceeded, Try again later. Check out Github documentation for rate limit.'
     throw new Error(apiRateLimitMessage)

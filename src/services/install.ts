@@ -39,9 +39,9 @@ const installVaultIterator: InstallCommandIterator = async (item) => {
       `Install ${stagePlugin.id}@${version} in ${vault.name} vault`,
     )
 
-    const pluginInRegistry = await findPluginInRegistry(stagePlugin.id)
-
     try {
+      const pluginInRegistry = await findPluginInRegistry(stagePlugin.id)
+
       if (!pluginInRegistry) {
         throw new PluginNotFoundInRegistryError(stagePlugin.id)
       }
@@ -75,15 +75,15 @@ const installVaultIterator: InstallCommandIterator = async (item) => {
         version,
       })
     } catch (error) {
+      childLogger.error(`Failed to install plugin`, { error })
+
       const failedPlugin = {
         ...stagePlugin,
-        repo: pluginInRegistry?.repo,
         version,
       }
 
       result.failedPlugins.push(failedPlugin)
       handleExceedRateLimitError(error)
-      childLogger.error(`Failed to install plugin`, { error })
     }
   }
 

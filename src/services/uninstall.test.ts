@@ -11,16 +11,12 @@ import {
 } from '../utils/testing'
 import { ConfigSchema } from './config'
 import installService from './install'
+import uninstallService from './uninstall'
 
 const { installVaultIterator } = installService
+const { uninstallVaultIterator } = uninstallService
 
 const sandbox = sinon.createSandbox()
-const removePluginDirStub = sandbox.stub().resolves()
-const {
-  default: { uninstallVaultIterator },
-} = proxyquire.noCallThru()('./uninstall', {
-  '../providers/plugins': { removePluginDir: removePluginDirStub },
-})
 
 const [{ id: plugin1Id }, { id: plugin2Id }] = [plugin1, plugin2]
 
@@ -158,7 +154,12 @@ describe('Command: uninstall', () => {
       config?.plugins[0].id,
     )
 
-    removePluginDirStub.rejects(new Error('Error'))
+    const removePluginDirStub = sandbox.stub().rejects(new Error('Error'))
+    const {
+      default: { uninstallVaultIterator },
+    } = proxyquire.noCallThru()('./uninstall', {
+      '../providers/plugins': { removePluginDir: removePluginDirStub },
+    })
 
     const result = await (uninstallVaultIterator as UninstallCommandIterator)({
       vault,
