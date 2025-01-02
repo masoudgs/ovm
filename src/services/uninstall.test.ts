@@ -1,12 +1,11 @@
 import { expect } from 'chai'
-import { loadVaults, vaultsSelector } from '../providers/vaults'
 import { plugin1, plugin2 } from '../utils/fixtures/plugins'
 import {
   destroyVault,
   getTestCommonWithVaultPathFlags,
   setupVault,
 } from '../utils/testing'
-import { Config, ConfigSchema, Plugin, safeLoadConfig } from './config'
+import { ConfigSchema } from './config'
 import installService from './install'
 import uninstallService from './uninstall'
 
@@ -25,23 +24,32 @@ describe('Command: uninstall', () => {
       vault.path,
     )
 
-    const vaults = await loadVaults(vault.path)
-    const selectedVaults = await vaultsSelector(vaults)
-    const { data: loadedConfig } = await safeLoadConfig(config.path)
     const plugins = [{ id: plugin1Id }]
 
-    const installResult = await installVaultIterator(
-      selectedVaults[0],
-      loadedConfig as Config,
-      { ...testCommonWithVaultPathFlags, enable: true },
-      false,
-    )
+    const installResult = await installVaultIterator({
+      vault,
+      config,
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
+      },
+      specific: false,
+    })
 
     expect(installResult.installedPlugins[0].id).to.be.equal(
-      loadedConfig?.plugins[0].id,
+      config?.plugins[0].id,
     )
 
-    const result = await uninstallVaultIterator(selectedVaults[0], plugins)
+    const result = await uninstallVaultIterator({
+      vault,
+      config: {
+        ...config,
+        plugins,
+      },
+      flags: {
+        ...testCommonWithVaultPathFlags,
+      },
+    })
 
     expect(result.uninstalledPlugins.some(({ id }) => id === plugin1Id)).to.be
       .true
@@ -57,12 +65,11 @@ describe('Command: uninstall', () => {
       ConfigSchema.parse({ plugins: [{ id: pluginId }] }),
     )
 
-    const { data: loadedConfig } = await safeLoadConfig(config.path)
-
-    const result = await uninstallVaultIterator(
+    const result = await uninstallVaultIterator({
       vault,
-      loadedConfig?.plugins as Plugin[],
-    )
+      config,
+      flags: getTestCommonWithVaultPathFlags(config.path, vault.path),
+    })
 
     expect(result.uninstalledPlugins.length).to.equal(0)
     expect(result.failedPlugins.some(({ id }) => id === pluginId)).to.be.true

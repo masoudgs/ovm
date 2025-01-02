@@ -1,12 +1,11 @@
 import { expect } from 'chai'
-import { loadVaults, vaultsSelector } from '../providers/vaults'
 import { plugin5 } from '../utils/fixtures/plugins'
 import {
   destroyVault,
   getTestCommonWithVaultPathFlags,
   setupVault,
 } from '../utils/testing'
-import { Config, ConfigSchema, safeLoadConfig } from './config'
+import { ConfigSchema } from './config'
 import installService from './install'
 
 const { installVaultIterator } = installService
@@ -21,22 +20,17 @@ describe('Command: install', () => {
       vault.path,
     )
 
-    const vaults = await loadVaults(vault.path)
-    const selectedVaults = await vaultsSelector(vaults)
-    const { data: loadedConfig } = await safeLoadConfig(config.path)
-
-    const result = await installVaultIterator(
-      selectedVaults[0],
-      loadedConfig as Config,
-      {
+    const result = await installVaultIterator({
+      vault,
+      config,
+      flags: {
         ...testCommonWithVaultPathFlags,
         enable: true,
       },
-    )
+      specific: true,
+    })
 
-    expect(result.installedPlugins[0].id).to.be.equal(
-      loadedConfig?.plugins[0].id,
-    )
+    expect(result.installedPlugins[0].id).to.be.equal(config?.plugins[0].id)
     expect(result.failedPlugins.length).to.equal(0)
     expect(result.reinstallPlugins.length).to.equal(0)
 
@@ -53,14 +47,15 @@ describe('Command: install', () => {
       vault.path,
     )
 
-    const vaults = await loadVaults(vault.path)
-    const selectedVaults = await vaultsSelector(vaults)
-
-    const result = await installVaultIterator(
-      selectedVaults[0],
-      ConfigSchema.parse({ plugins: [{ id: pluginId }] }),
-      { ...testCommonWithVaultPathFlags, enable: true, path: vault.path },
-    )
+    const result = await installVaultIterator({
+      vault,
+      config,
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
+      },
+      specific: true,
+    })
 
     expect(result.installedPlugins.length).to.equal(0)
     expect(result.failedPlugins.length).to.equal(1)

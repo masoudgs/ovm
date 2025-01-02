@@ -140,11 +140,11 @@ const commandInterpolation = (vault: Vault, command: string): string => {
 }
 
 const asyncExecCustomCommand = async (
-  command: string,
-  runFromVaultDirectoryAsWorkDir: boolean,
   vault: Vault,
-): Promise<Pick<ExecuteCustomCommandResult, 'error'> | string> => {
-  return new Promise((resolve, reject) => {
+  command = '',
+  runFromVaultDirectoryAsWorkDir = true,
+): Promise<Pick<ExecuteCustomCommandResult, 'error'> | string> =>
+  new Promise((resolve, reject) => {
     exec(
       commandInterpolation(vault, command),
       { cwd: runFromVaultDirectoryAsWorkDir ? vault.path : __dirname },
@@ -156,7 +156,6 @@ const asyncExecCustomCommand = async (
       },
     )
   })
-}
 
 export {
   asyncExecCustomCommand,

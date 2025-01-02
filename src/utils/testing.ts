@@ -45,14 +45,14 @@ export const setupVault = (overrideConfig?: Config) => {
     )
   }
 
-  createDefaultConfig(
+  const config = createDefaultConfig(
     configFilePath,
     overrideConfig ?? ConfigSchema.parse({ plugins: [] }),
   )
 
   return {
     vault: { name: vaultName, path: normalizedPath },
-    config: { path: configFilePath },
+    config: { ...config, ...{ path: configFilePath } },
   }
 }
 
@@ -69,6 +69,7 @@ export const getTestCommonWithVaultPathFlags = (
   timestamp: false,
   config: configFilePath,
   path: vaultPath,
+  output: 'json',
 })
 
 export const destroyVault = (vaultPath: string) => {
