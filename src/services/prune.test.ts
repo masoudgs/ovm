@@ -6,7 +6,7 @@ import {
   getTestCommonWithVaultPathFlags,
   setupVault,
 } from '../utils/testing'
-import { ConfigSchema, safeLoadConfig } from './config'
+import { ConfigSchema } from './config'
 import installService from './install'
 import pruneService from './prune'
 
@@ -25,8 +25,6 @@ describe('Command: prune', () => {
       vault.path,
     )
 
-    const { data: loadedConfig } = await safeLoadConfig(config.path)
-
     const installResult = await installVaultIterator({
       vault,
       config: {
@@ -40,7 +38,7 @@ describe('Command: prune', () => {
     })
 
     expect(installResult.installedPlugins[0].id).to.be.equal(
-      loadedConfig?.plugins[0].id,
+      config?.plugins[0].id,
     )
 
     await modifyCommunityPlugins({ id: plugin3Id }, vault.path, 'disable')

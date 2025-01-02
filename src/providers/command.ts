@@ -4,11 +4,7 @@ import { exec } from 'child_process'
 import { Vault } from 'obsidian-utils'
 import { homedir } from 'os'
 import path from 'path'
-import {
-  ExecuteCustomCommandResult,
-  FactoryFlags,
-  FactoryFlagsWithVaults,
-} from '../types/commands'
+import { FactoryFlags, FactoryFlagsWithVaults } from '../types/commands'
 import { handlerCommandError } from '../utils/command'
 import {
   OVM_CONFIG_FILENAME,
@@ -143,7 +139,7 @@ const asyncExecCustomCommand = async (
   vault: Vault,
   command = '',
   runFromVaultDirectoryAsWorkDir = true,
-): Promise<Pick<ExecuteCustomCommandResult, 'error'> | string> =>
+): Promise<string> =>
   new Promise((resolve, reject) => {
     exec(
       commandInterpolation(vault, command),

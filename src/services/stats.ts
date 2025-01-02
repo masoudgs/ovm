@@ -7,11 +7,7 @@ import { readFile } from 'fs/promises'
 import { isPluginInstalled, vaultPathToPluginsPath } from 'obsidian-utils'
 import { join } from 'path'
 import { promisify } from 'util'
-import {
-  loadVaults,
-  mapVaultsIteratorItem,
-  vaultsSelector,
-} from '../providers/vaults'
+import { getSelectedVaults, mapVaultsIteratorItem } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   InstalledPlugins,
@@ -23,7 +19,7 @@ import {
 } from '../types/commands'
 import { handlerCommandError } from '../utils/command'
 import { logger } from '../utils/logger'
-import { safeLoadConfig } from './config'
+import { loadConfig } from './config'
 
 const installedPlugins: InstalledPlugins = {}
 
@@ -73,18 +69,8 @@ const action = async (
   iterator: StatsCommandIterator = statsVaultIterator,
   callback?: StatsCommandCallback,
 ) => {
-  const {
-    success: loadConfigSuccess,
-    data: config,
-    error: loadConfigError,
-  } = await safeLoadConfig(flags.config)
-  if (!loadConfigSuccess) {
-    logger.error('Failed to load config', { error: loadConfigError })
-    process.exit(1)
-  }
-
-  const vaults = await loadVaults(flags.path)
-  const selectedVaults = await vaultsSelector(vaults)
+  const config = await loadConfig(flags.config)
+  const selectedVaults = await getSelectedVaults(flags.path)
 
   const items = mapVaultsIteratorItem<
     StatsArgs,
@@ -96,7 +82,7 @@ const action = async (
       success: false,
       error,
       totalStats: {
-        totalVaults: vaults.length,
+        totalVaults: selectedVaults.length,
         totalPlugins: config.plugins.length,
       },
       installedPlugins,
