@@ -137,13 +137,13 @@ const commandInterpolation = (vault: Vault, command: string): string => {
 
 const asyncExecCustomCommand = async (
   vault: Vault,
-  command = '',
-  runFromVaultDirectoryAsWorkDir = true,
+  command: string,
+  cwd: string,
 ): Promise<string> =>
   new Promise((resolve, reject) => {
     exec(
       commandInterpolation(vault, command),
-      { cwd: runFromVaultDirectoryAsWorkDir ? vault.path : __dirname },
+      { cwd },
       (error, stdout, stderr) => {
         if (error) {
           reject(error)

@@ -1,6 +1,7 @@
 import { Args, flush } from '@oclif/core'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import uninstallService from '../../services/uninstall'
+import { UninstallFlags } from '../../types/commands'
 
 const { action } = uninstallService
 
@@ -34,7 +35,7 @@ export default class Uninstall extends FactoryCommandWithVaults {
   public async run() {
     try {
       const { args, flags } = await this.parse(Uninstall)
-      await action(args, this.flagsInterceptor(flags))
+      await action(args, this.flagsInterceptor<UninstallFlags>(flags))
     } catch (error) {
       this.handleError(error)
     } finally {

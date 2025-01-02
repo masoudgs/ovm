@@ -1,6 +1,7 @@
 import { flush } from '@oclif/core'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import pruneService from '../../services/prune'
+import { PruneFlags } from '../../types/commands'
 
 const { action } = pruneService
 
@@ -27,7 +28,7 @@ export default class Prune extends FactoryCommandWithVaults {
   public async run() {
     try {
       const { args, flags } = await this.parse(Prune)
-      await action(args, this.flagsInterceptor(flags))
+      await action(args, this.flagsInterceptor<PruneFlags>(flags))
     } catch (error) {
       this.handleError(error)
     } finally {

@@ -31,7 +31,7 @@ export default class Init extends FactoryCommand {
   public async run() {
     try {
       const { args, flags } = await this.parse(Init)
-      return action(args, this.flagsInterceptor(flags))
+      return action(args, this.flagsInterceptor<InitFlags>(flags))
     } catch (error) {
       this.handleError(error)
     } finally {
