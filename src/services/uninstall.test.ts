@@ -1,4 +1,8 @@
 import { expect } from 'chai'
+import proxyquire from 'proxyquire'
+import sinon from 'sinon'
+
+import { UninstallCommandIterator } from '../types/commands'
 import { plugin1, plugin2 } from '../utils/fixtures/plugins'
 import {
   destroyVault,
@@ -7,14 +11,24 @@ import {
 } from '../utils/testing'
 import { ConfigSchema } from './config'
 import installService from './install'
-import uninstallService from './uninstall'
 
 const { installVaultIterator } = installService
-const { uninstallVaultIterator } = uninstallService
 
-const [{ id: plugin1Id }] = [plugin1, plugin2]
+const sandbox = sinon.createSandbox()
+const removePluginDirStub = sandbox.stub().resolves()
+const {
+  default: { uninstallVaultIterator },
+} = proxyquire.noCallThru()('./uninstall', {
+  '../providers/plugins': { removePluginDir: removePluginDirStub },
+})
+
+const [{ id: plugin1Id }, { id: plugin2Id }] = [plugin1, plugin2]
 
 describe('Command: uninstall', () => {
+  afterEach(() => {
+    sandbox.restore()
+  })
+
   it('should perform uninstallation successfully', async () => {
     const { config, vault } = setupVault(
       ConfigSchema.parse({ plugins: [plugin1] }),
@@ -39,7 +53,7 @@ describe('Command: uninstall', () => {
       config?.plugins[0].id,
     )
 
-    const result = await uninstallVaultIterator({
+    const result = await (uninstallVaultIterator as UninstallCommandIterator)({
       vault,
       config: {
         ...config,
@@ -64,7 +78,7 @@ describe('Command: uninstall', () => {
       ConfigSchema.parse({ plugins: [{ id: pluginId }] }),
     )
 
-    const result = await uninstallVaultIterator({
+    const result = await (uninstallVaultIterator as UninstallCommandIterator)({
       vault,
       config,
       flags: getTestCommonWithVaultPathFlags(config.path, vault.path),
@@ -101,7 +115,7 @@ describe('Command: uninstall', () => {
       config?.plugins[1].id,
     )
 
-    const result = await uninstallVaultIterator({
+    const result = await (uninstallVaultIterator as UninstallCommandIterator)({
       vault,
       config,
       flags: {
@@ -114,6 +128,53 @@ describe('Command: uninstall', () => {
     expect(result.uninstalledPlugins.some(({ id }) => id === plugin1Id)).to.be
       .true
     expect(result.failedPlugins.length).to.equal(0)
+
+    destroyVault(vault.path)
+  })
+
+  it('should count failed plugins when process encounter unhandled issue', async () => {
+    const { vault, config } = setupVault(
+      ConfigSchema.parse({ plugins: [plugin1, plugin2] }),
+    )
+    const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
+      config.path,
+      vault.path,
+    )
+
+    // Only install plugin1 and leave plugin2 uninstalled to test the failure
+    const installResult = await installVaultIterator({
+      vault,
+      config,
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
+      },
+      args: {
+        pluginId: plugin1Id,
+      },
+    })
+
+    expect(installResult.installedPlugins[0].id).to.be.equal(
+      config?.plugins[0].id,
+    )
+
+    removePluginDirStub.rejects(new Error('Error'))
+
+    const result = await (uninstallVaultIterator as UninstallCommandIterator)({
+      vault,
+      config,
+      flags: {
+        ...testCommonWithVaultPathFlags,
+      },
+    })
+
+    expect(removePluginDirStub.called).to.be.true
+    expect(result.uninstalledPlugins.length).to.equal(0)
+    expect(result.failedPlugins.length).to.equal(2)
+    expect(result.failedPlugins.some((plugin) => plugin.id === plugin1Id)).to.be
+      .true
+    expect(result.failedPlugins.some((plugin) => plugin.id === plugin2Id)).to.be
+      .true
 
     destroyVault(vault.path)
   })

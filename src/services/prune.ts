@@ -24,10 +24,6 @@ const pruneVaultIterator: PruneCommandIterator = async (item) => {
   const childLogger = logger.child({ vault })
   const result: PruneCommandIteratorResult = { prunedPlugins: [] }
 
-  if (!config.plugins.length) {
-    return { prunedPlugins: [] }
-  }
-
   const installedPlugins = await listInstalledPlugins(vault.path)
   const referencedPlugins = config.plugins.map(({ id }) => id)
   const toBePruned = installedPlugins.filter(

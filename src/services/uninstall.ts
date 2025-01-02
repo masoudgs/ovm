@@ -40,7 +40,6 @@ const uninstallVaultIterator: UninstallCommandIterator = async (item) => {
 
     try {
       await removePluginDir(stagePlugin.id, vault.path)
-      result.uninstalledPlugins.push(stagePlugin)
 
       const updatedPlugins = new Set(
         config.plugins.filter((plugin) => plugin.id !== stagePlugin.id),
@@ -49,9 +48,10 @@ const uninstallVaultIterator: UninstallCommandIterator = async (item) => {
       writeConfig(updatedConfig, flags.config)
 
       childLogger.info(`Uninstalled plugin`)
+      result.uninstalledPlugins.push(stagePlugin)
     } catch (error) {
-      result.failedPlugins.push(stagePlugin)
       childLogger.error(`Failed to uninstall plugin`, { error })
+      result.failedPlugins.push(stagePlugin)
     }
   }
 
