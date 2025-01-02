@@ -30,8 +30,6 @@ export const findVaultsByPatternMatching = async (pathPattern: string) => {
   return detectedVaults
 }
 
-export const findVaultsFromConfig = findVault
-
 export const vaultsSelector = async (vaults: Vault[]) => {
   const choices = vaults
     .map((vault) => ({
@@ -78,7 +76,7 @@ export const loadVaults = async (path: string): Promise<Vault[]> => {
   if (isPathSpecifiedAndValid) {
     vaults = await findVaultsByPatternMatching(path)
   } else {
-    vaults = await findVaultsFromConfig()
+    vaults = await findVault()
   }
 
   if (vaults.length === 0) {
