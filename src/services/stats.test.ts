@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { plugin1 } from '../utils/fixtures/plugins'
+import { plugin1, plugin2 } from '../utils/fixtures/plugins'
 import { ConfigSchema } from './config'
 import statsService from './stats'
 
@@ -30,8 +30,7 @@ describe('Command: stats', () => {
   })
 
   it('should display stats for vaults and 1 plugin', async () => {
-    const sampleConfig = ConfigSchema.parse({ plugins: [] })
-    const { vault, config } = setupVault(sampleConfig)
+    const { vault, config } = setupVault(ConfigSchema.parse({ plugins: [] }))
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
       config.path,
       vault.path,
@@ -40,7 +39,7 @@ describe('Command: stats', () => {
     const installResult = await installVaultIterator({
       vault,
       config: {
-        ...sampleConfig,
+        ...config,
         plugins: [plugin1],
       },
       flags: {
@@ -67,6 +66,42 @@ describe('Command: stats', () => {
     for (const key in installedPlugins) {
       expect(key).to.match(new RegExp(`${plugin1.id}@${plugin1.version}`))
     }
+
+    destroyVault(vault.path)
+  })
+
+  it('should not display stats for a plugin dir which does not exist', async () => {
+    const { vault, config } = setupVault(ConfigSchema.parse({ plugins: [] }))
+    const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
+      config.path,
+      vault.path,
+    )
+
+    const installResult = await installVaultIterator({
+      vault,
+      config: {
+        ...config,
+        plugins: [plugin1],
+      },
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
+      },
+      args: {
+        pluginId: plugin1.id,
+      },
+    })
+
+    expect(installResult.installedPlugins[0].id).to.be.equal(plugin1.id)
+
+    const result = await statsVaultIterator({
+      vault,
+      config: ConfigSchema.parse({ plugins: [plugin1, plugin2] }),
+      flags: testCommonWithVaultPathFlags,
+    })
+
+    expect(result.installedPlugins).to.be.equal(1)
+    expect(result.configuredPlugins).to.be.equal(2)
 
     destroyVault(vault.path)
   })
