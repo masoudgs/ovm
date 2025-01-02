@@ -1,4 +1,3 @@
-import fetchIntercept from 'fetch-intercept'
 import { existsSync } from 'fs'
 import fse from 'fs-extra'
 import fsp from 'fs/promises'
@@ -88,39 +87,4 @@ export const destroyVault = (vaultPath: string) => {
   if (customLogsPath && existsSync(customLogsPath)) {
     fse.rmSync(customLogsPath, { force: true })
   }
-}
-
-export const patchNodeFetchForGithub = () => {
-  const unregister = fetchIntercept.register({
-    request: (url, config) => {
-      console.log('url', url)
-      if (url.contains('github.com')) {
-        config.headers = {
-          ...config.headers,
-          Accept: 'application/vnd.github.v3+json',
-          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-          // 'X-GitHub-Api-Version': '2022-11-28'
-        }
-
-        console.log('[url, config]', [url, config])
-        return [url, config]
-      }
-
-      return [url, config]
-    },
-
-    requestError: (error: Error) => {
-      return Promise.reject(error)
-    },
-
-    response: (response) => {
-      return response
-    },
-
-    responseError: (error: Error) => {
-      return Promise.reject(error)
-    },
-  })
-
-  return unregister
 }

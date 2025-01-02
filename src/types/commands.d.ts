@@ -231,7 +231,7 @@ export interface CommandVaultIteratorItem {
 
 export type RunCommandVaultIteratorItem = CommandVaultIteratorItem & {
   flags: FactoryFlagsWithVaults<RunFlags>
-  args?: RunArgs
+  args: RunArgs
 }
 
 export type RunCommandIteratorResult = CommandsExecutedOnVaults[0]
