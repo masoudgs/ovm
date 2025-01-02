@@ -81,3 +81,7 @@ export const modifyCommunityPlugins = async (
 
   childLogger.debug(`Modify action performed`)
 }
+
+export const deduplicatePlugins = (plugins: Plugin[], stagePlugin: Plugin) => {
+  return plugins.filter((plugin) => plugin.id !== stagePlugin.id)
+}
