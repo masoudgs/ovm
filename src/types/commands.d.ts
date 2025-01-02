@@ -46,6 +46,8 @@ export type InstalledPlugins = Record<string, Array<string>>
 
 export type PruneFlags = Record<string, unknown>
 
+export type PruneArgs = Record<string, unknown>
+
 export interface PrunePluginVaultOpts {
   vault: Vault
   config: Config
@@ -79,12 +81,18 @@ export interface StatsFlags {
   output: string
 }
 
+export type StatsArgs = Record<string, unknown>
+
 export interface RunFlags {
   runFromVaultDirectoryAsWorkDir: boolean
   output?: string
   unescape?: boolean
   async?: boolean
   silent?: boolean
+}
+
+export interface RunArgs {
+  command: string
 }
 
 export interface CommandArgs {
@@ -102,8 +110,8 @@ export interface ExecuteCustomCommandCallbackResult {
 }
 
 export type StatsCommandVaultIteratorItem = CommandVaultIteratorItem & {
-  config: Config
   flags: FactoryFlagsWithVaults<StatsFlags>
+  args: StatsArgs
 }
 
 export type StatsCommandIteratorResult = {
@@ -111,10 +119,8 @@ export type StatsCommandIteratorResult = {
   installedPlugins: number
 }
 
-export type StatsCommandIterator<T> = (
-  _item: StatsCommandVaultIteratorItem & {
-    flags: FactoryFlags<T> | FactoryFlagsWithVaults<T>
-  },
+export type StatsCommandIterator = (
+  _item: StatsCommandVaultIteratorItem,
 ) => Promise<StatsCommandIteratorResult>
 
 export type StatsCommandCallbackResult = CommandCallbackBaseResult & {
@@ -125,16 +131,20 @@ export type StatsCommandCallbackResult = CommandCallbackBaseResult & {
   installedPlugins?: InstalledPlugins
 }
 
-export type StatsCommandCallback = (_result: StatsCommandCallbackResult) => void
+export type StatsCommandCallback = (
+  _err?: Error | null,
+) => StatsCommandCallbackResult
 
 export type CommandCallbackBaseResult = {
   success: boolean
-  error?: Error
+  error?: Error | null
 }
 
 export type InitCommandCallbackResult = CommandCallbackBaseResult
 
-export type InitCommandCallback = (_result: InitCommandCallbackResult) => void
+export type InitCommandCallback = (
+  _err?: Error | null,
+) => InitCommandCallbackResult
 
 export interface InstallCommandIteratorResult {
   installedPlugins: StagedPlugins
@@ -143,15 +153,12 @@ export interface InstallCommandIteratorResult {
 }
 
 export type InstallCommandVaultIteratorItem = CommandVaultIteratorItem & {
-  config: Config
   flags: FactoryFlagsWithVaults<InstallFlags>
-  specific: boolean
+  args: InstallArgs
 }
 
-export type InstallCommandIterator<T> = (
-  _item: InstallCommandVaultIteratorItem & {
-    flags: FactoryFlags<T> | FactoryFlagsWithVaults<T>
-  },
+export type InstallCommandIterator = (
+  _item: InstallCommandVaultIteratorItem,
 ) => Promise<
   InstallCommandIteratorResult | (CustomError & InstallCommandIteratorResult)
 >
@@ -163,29 +170,23 @@ export type CommandVaultIterator<T> = AsyncIterator<
   CustomError & InstallCommandIteratorResult
 >
 
-export type InstallCommandCallbackResult =
-  | Error
-  | null
-  | undefined
-  | CommandCallbackBaseResult
+export type InstallCommandCallbackResult = CommandCallbackBaseResult
 
 export type InstallCommandCallback = (
-  _err: InstallCommandCallbackResult,
-) => CommandCallbackBaseResult
+  _err?: Error | null,
+) => InstallCommandCallbackResult
 
 export interface PruneCommandIteratorResult {
   prunedPlugins: Array<PrunedPlugin>
 }
 
 export type PruneCommandVaultIteratorItem = CommandVaultIteratorItem & {
-  config: Config
   flags: FactoryFlagsWithVaults<PruneFlags>
+  args: PruneArgs
 }
 
-export type PruneCommandIterator<T> = (
-  _item: PruneCommandVaultIteratorItem & {
-    flags: FactoryFlags<T> | FactoryFlagsWithVaults<T>
-  },
+export type PruneCommandIterator = (
+  _item: PruneCommandVaultIteratorItem,
 ) => Promise<
   PruneCommandIteratorResult | (CustomError & PruneCommandIteratorResult)
 >
@@ -193,7 +194,7 @@ export type PruneCommandIterator<T> = (
 export type PruneCommandCallbackResult = CommandCallbackBaseResult
 
 export type PruneCommandCallback = (
-  _err: Error | null | undefined,
+  _err?: Error | null,
 ) => PruneCommandCallbackResult
 
 export interface UninstalledPlugin {
@@ -206,45 +207,41 @@ export interface UninstallCommandIteratorResult {
 }
 
 export type UninstallCommandVaultIteratorItem = CommandVaultIteratorItem & {
-  config: Config
   flags: FactoryFlagsWithVaults<UninstallFlags>
+  args: UninstallArgs
 }
 
-export type UninstallCommandIterator<T> = (
-  _item: UninstallCommandVaultIteratorItem & {
-    flags: FactoryFlags<T> | FactoryFlagsWithVaults<T>
-  },
+export type UninstallCommandIterator = (
+  _item: UninstallCommandVaultIteratorItem,
 ) => Promise<
   | UninstallCommandIteratorResult
   | (CustomError & UninstallCommandIteratorResult)
 >
 
-export type UninstallCommandCallbackResult =
-  | Error
-  | null
-  | undefined
-  | CommandCallbackBaseResult
+export type UninstallCommandCallbackResult = CommandCallbackBaseResult
 
 export type UninstallCommandCallback = (
-  _result: UninstallCommandCallbackResult,
-) => void
+  _err?: Error | null,
+) => UninstallCommandCallbackResult
 
 export interface CommandVaultIteratorItem {
   vault: Vault
+  config: Config
 }
 
 export type RunCommandVaultIteratorItem = CommandVaultIteratorItem & {
-  command?: CommandArgs['command']
+  flags: FactoryFlagsWithVaults<RunFlags>
+  args: RunArgs
 }
 
 export type RunCommandIteratorResult = CommandsExecutedOnVaults[0]
 
-export type RunCommandIterator<T> = (
-  _item: RunCommandVaultIteratorItem & {
-    flags: FactoryFlags<T> | FactoryFlagsWithVaults<T>
-  },
+export type RunCommandIterator = (
+  _item: RunCommandVaultIteratorItem,
 ) => Promise<RunCommandIteratorResult>
 
 export type RunCommandCallbackResult = CommandCallbackBaseResult &
   ExecuteCustomCommandCallbackResult
-export type RunCommandCallback = (_result: RunCommandCallbackResult) => void
+export type RunCommandCallback = (
+  _err?: Error | null,
+) => RunCommandCallbackResult

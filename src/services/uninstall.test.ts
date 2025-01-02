@@ -33,7 +33,7 @@ describe('Command: uninstall', () => {
         ...testCommonWithVaultPathFlags,
         enable: true,
       },
-      specific: false,
+      args: {},
     })
 
     expect(installResult.installedPlugins[0].id).to.be.equal(
@@ -49,6 +49,7 @@ describe('Command: uninstall', () => {
       flags: {
         ...testCommonWithVaultPathFlags,
       },
+      args: {},
     })
 
     expect(result.uninstalledPlugins.some(({ id }) => id === plugin1Id)).to.be
@@ -69,10 +70,54 @@ describe('Command: uninstall', () => {
       vault,
       config,
       flags: getTestCommonWithVaultPathFlags(config.path, vault.path),
+      args: {},
     })
 
     expect(result.uninstalledPlugins.length).to.equal(0)
     expect(result.failedPlugins.some(({ id }) => id === pluginId)).to.be.true
+
+    destroyVault(vault.path)
+  })
+
+  it('should uninstall only the specified plugin', async () => {
+    const plugins = [plugin1, plugin2]
+    const { config, vault } = setupVault(ConfigSchema.parse({ plugins }))
+
+    const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
+      config.path,
+      vault.path,
+    )
+
+    const installResult = await installVaultIterator({
+      vault,
+      config,
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
+      },
+      args: {},
+    })
+
+    expect(installResult.installedPlugins[0].id).to.be.equal(
+      config?.plugins[0].id,
+    )
+    expect(installResult.installedPlugins[1].id).to.be.equal(
+      config?.plugins[1].id,
+    )
+
+    const result = await uninstallVaultIterator({
+      vault,
+      config,
+      flags: {
+        ...testCommonWithVaultPathFlags,
+      },
+      args: { pluginId: plugin1Id },
+    })
+
+    expect(result.uninstalledPlugins.length).to.equal(1)
+    expect(result.uninstalledPlugins.some(({ id }) => id === plugin1Id)).to.be
+      .true
+    expect(result.failedPlugins.length).to.equal(0)
 
     destroyVault(vault.path)
   })

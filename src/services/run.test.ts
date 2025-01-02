@@ -13,13 +13,14 @@ describe('Command: run', () => {
     const { vault, config } = setupVault()
     const result = await commandVaultIterator({
       vault,
-      command: '',
+      config,
       flags: {
-        config: config.path,
-        debug: false,
-        timestamp: false,
+        ...getTestCommonWithVaultPathFlags(config.path, vault.path),
         output: 'json',
         runFromVaultDirectoryAsWorkDir: false,
+      },
+      args: {
+        command: '',
       },
     })
 
@@ -32,11 +33,12 @@ describe('Command: run', () => {
     const { vault, config } = setupVault()
     const result = await commandVaultIterator({
       vault,
+      config,
       flags: {
         ...getTestCommonWithVaultPathFlags(config.path, vault.path),
         runFromVaultDirectoryAsWorkDir: false,
       },
-      command: "echo 'Path: {0} {1}'",
+      args: { command: "echo 'Path: {0} {1}'" },
     })
 
     expect(result?.success).to.be.true
@@ -50,11 +52,12 @@ describe('Command: run', () => {
     const { vault, config } = setupVault()
     const result = await commandVaultIterator({
       vault,
+      config,
       flags: {
         ...getTestCommonWithVaultPathFlags(config.path, vault.path),
         runFromVaultDirectoryAsWorkDir: false,
       },
-      command: "echo 'Path: {0} {1} {10000}'",
+      args: { command: "echo 'Path: {0} {1} {10000}'" },
     })
 
     expect(result.success).to.be.true

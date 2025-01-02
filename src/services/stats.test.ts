@@ -21,6 +21,7 @@ describe('Command: stats', () => {
       vault,
       config: ConfigSchema.parse({ plugins: [] }),
       flags: getTestCommonWithVaultPathFlags(config.path, vault.path),
+      args: {},
     })
 
     expect(result.installedPlugins).to.be.equal(0)
@@ -47,7 +48,9 @@ describe('Command: stats', () => {
         ...testCommonWithVaultPathFlags,
         enable: true,
       },
-      specific: true,
+      args: {
+        pluginId: plugin1.id,
+      },
     })
 
     expect(installResult.installedPlugins[0].id).to.be.equal(plugin1.id)
@@ -58,6 +61,7 @@ describe('Command: stats', () => {
       vault,
       config: ConfigSchema.parse({ plugins: [plugin1] }),
       flags: getTestCommonWithVaultPathFlags(config.path, vault.path),
+      args: {},
     })
 
     expect(result.installedPlugins).to.be.equal(1)

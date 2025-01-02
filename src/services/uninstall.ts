@@ -6,27 +6,28 @@ import {
   mapVaultsIteratorItem,
   vaultsSelector,
 } from '../providers/vaults'
-import { Plugin } from '../services/config'
+import { Plugin, writeConfig } from '../services/config'
 import {
   FactoryFlagsWithVaults,
   UninstallArgs,
   UninstallCommandCallback,
+  UninstallCommandCallbackResult,
   UninstallCommandIterator,
   UninstallFlags,
 } from '../types/commands'
+import { handlerCommandError } from '../utils/command'
 import { logger } from '../utils/logger'
 import { safeLoadConfig } from './config'
 
-const uninstallVaultIterator: UninstallCommandIterator<UninstallFlags> = async (
-  item,
-) => {
-  const { vault, config } = item
-  const { plugins } = config
+const uninstallVaultIterator: UninstallCommandIterator = async (item) => {
+  const { vault, config, flags, args } = item
+  // Check if pluginId is provided and install only that plugin
+  const stagedPlugins = args.pluginId ? [{ id: args.pluginId }] : config.plugins
   const uninstalledPlugins: Plugin[] = []
   const failedPlugins: Plugin[] = []
   const result = { uninstalledPlugins, failedPlugins }
 
-  for (const stagePlugin of plugins) {
+  for (const stagePlugin of stagedPlugins) {
     const childLogger = logger.child({ plugin: stagePlugin, vault })
 
     if (!(await isPluginInstalled(stagePlugin.id, vault.path))) {
@@ -38,6 +39,13 @@ const uninstallVaultIterator: UninstallCommandIterator<UninstallFlags> = async (
     try {
       await removePluginDir(stagePlugin.id, vault.path)
       result.uninstalledPlugins.push(stagePlugin)
+
+      const updatedPlugins = new Set(
+        config.plugins.filter((plugin) => plugin.id !== stagePlugin.id),
+      )
+      const updatedConfig = { ...config, plugins: [...updatedPlugins] }
+      writeConfig(updatedConfig, flags.config)
+
       childLogger.info(`Uninstalled plugin`)
     } catch (error) {
       result.failedPlugins.push(stagePlugin)
@@ -55,7 +63,7 @@ const uninstallVaultIterator: UninstallCommandIterator<UninstallFlags> = async (
 const action = async (
   args: UninstallArgs,
   flags: FactoryFlagsWithVaults<UninstallFlags>,
-  iterator: UninstallCommandIterator<UninstallFlags> = uninstallVaultIterator,
+  iterator: UninstallCommandIterator = uninstallVaultIterator,
   callback?: UninstallCommandCallback,
 ): Promise<void> => {
   const { path } = flags
@@ -78,17 +86,31 @@ const action = async (
     ? { plugins: [{ id: args.pluginId }] }
     : config
 
-  const items = mapVaultsIteratorItem(selectedVaults, configWithPlugins, flags)
+  const items = mapVaultsIteratorItem<
+    UninstallArgs,
+    FactoryFlagsWithVaults<UninstallFlags>
+  >(selectedVaults, configWithPlugins, args, flags)
 
   const uninstallCommandCallback: UninstallCommandCallback = (error) => {
-    if (error instanceof Error) {
-      logger.debug('Error uninstalling plugins', { error })
-      return callback?.({ success: false, error })
+    const result: UninstallCommandCallbackResult = {
+      success: false,
+      error,
     }
 
-    logger.debug('Uninstalled plugins', { items })
+    if (!error) {
+      logger.info('Uninstalling plugins completed')
+      result.success = true
+      callback?.(null)
 
-    return callback?.({ success: true })
+      return result
+    }
+
+    logger.debug('Error uninstalling plugins', { error })
+
+    callback?.(error)
+    handlerCommandError(error)
+
+    return result
   }
 
   return each(items, iterator, uninstallCommandCallback)

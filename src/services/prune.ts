@@ -1,10 +1,16 @@
 import { ArgInput } from '@oclif/core/lib/parser'
 import { each } from 'async'
 import { listInstalledPlugins, removePluginDir } from '../providers/plugins'
-import { loadVaults, vaultsSelector } from '../providers/vaults'
+import {
+  loadVaults,
+  mapVaultsIteratorItem,
+  vaultsSelector,
+} from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
+  PruneArgs,
   PruneCommandCallback,
+  PruneCommandCallbackResult,
   PruneCommandIterator,
   PruneCommandIteratorResult,
   PruneFlags,
@@ -13,9 +19,7 @@ import { handlerCommandError } from '../utils/command'
 import { logger } from '../utils/logger'
 import { safeLoadConfig } from './config'
 
-const pruneVaultIterator: PruneCommandIterator<
-  FactoryFlagsWithVaults<PruneFlags>
-> = async (item): Promise<PruneCommandIteratorResult> => {
+const pruneVaultIterator: PruneCommandIterator = async (item) => {
   const { vault, config } = item
   const childLogger = logger.child({ vault })
   const result: PruneCommandIteratorResult = { prunedPlugins: [] }
@@ -44,18 +48,11 @@ const pruneVaultIterator: PruneCommandIterator<
   return result
 }
 
-/**
- * Main action method for the prune command.
- * Loads vaults, selects vaults, loads configuration, and prunes unused plugins.
- * @param {ArgInput} _args
- * @param {FactoryFlagsWithVaults<PruneFlags>} flags
- * @param {PruneCommandIterator} [iterator=() => {}]
- * @param {PruneCommandCallback} [callback=() => {}]
- * @returns {Promise<void>}
- */
 const action = async (
-  _args: ArgInput,
+  args: ArgInput,
   flags: FactoryFlagsWithVaults<PruneFlags>,
+  iterator: PruneCommandIterator = pruneVaultIterator,
+  callback?: PruneCommandCallback,
 ): Promise<void> => {
   const {
     success: loadConfigSuccess,
@@ -70,32 +67,33 @@ const action = async (
 
   const vaults = await loadVaults(flags.path)
   const selectedVaults = await vaultsSelector(vaults)
+  const items = mapVaultsIteratorItem<
+    PruneArgs,
+    FactoryFlagsWithVaults<PruneFlags>
+  >(selectedVaults, config, args, flags)
 
   const pruneCommandCallback: PruneCommandCallback = (error) => {
-    if (error) {
-      logger.error('Pruning plugins failed', { error })
-      handlerCommandError(error)
-      return {
-        success: false,
-        error,
-      }
-    } else {
-      logger.info('Pruning plugins completed')
-      return {
-        success: true,
-      }
+    const result: PruneCommandCallbackResult = {
+      success: false,
+      error,
     }
+
+    if (!error) {
+      result.success = true
+      logger.info('Pruning plugins completed')
+      callback?.(error)
+
+      return result
+    }
+
+    logger.error('Pruning plugins failed', { error })
+    callback?.(error)
+    handlerCommandError(error)
+
+    return result
   }
 
-  return each(
-    selectedVaults.map((vault) => ({
-      vault,
-      config,
-      flags,
-    })),
-    pruneVaultIterator,
-    pruneCommandCallback,
-  )
+  return each(items, iterator, pruneCommandCallback)
 }
 
 export default {

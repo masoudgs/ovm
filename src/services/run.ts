@@ -7,10 +7,10 @@ import {
   vaultsSelector,
 } from '../providers/vaults'
 import {
-  CommandArgs,
   CommandsExecutedOnVaults,
   CustomError,
   FactoryFlagsWithVaults,
+  RunArgs,
   RunCommandCallback,
   RunCommandCallbackResult,
   RunCommandIterator,
@@ -27,8 +27,9 @@ import { safeLoadConfig } from './config'
 
 const taskExecutedOnVaults: CommandsExecutedOnVaults = {}
 
-const commandVaultIterator: RunCommandIterator<RunFlags> = async (item) => {
-  const { vault, command, flags } = item
+const commandVaultIterator: RunCommandIterator = async (item) => {
+  const { vault, args, flags } = item
+  const { command } = args
   const internalCustomLogger = logger.child({
     vault: { path: vault.path, name: vault.name },
     command,
@@ -113,9 +114,9 @@ const commandVaultIterator: RunCommandIterator<RunFlags> = async (item) => {
 }
 
 const action = async (
-  args: CommandArgs,
+  args: RunArgs,
   flags: FactoryFlagsWithVaults<RunFlags>,
-  iterator: RunCommandIterator<RunFlags> = commandVaultIterator,
+  iterator: RunCommandIterator = commandVaultIterator,
   callback?: RunCommandCallback,
 ) => {
   const {
@@ -143,31 +144,21 @@ const action = async (
     vaults: selectedVaults.length,
   })
 
-  const items = mapVaultsIteratorItem(
-    selectedVaults,
-    config,
-    flags,
-    args.command,
-  )
+  const items = mapVaultsIteratorItem<
+    RunArgs,
+    FactoryFlagsWithVaults<RunFlags>
+  >(selectedVaults, config, args, flags)
 
   const commandVaultCallback = (error: CustomError | null | undefined) => {
     const result: RunCommandCallbackResult = {
       success: false,
-      sortedTaskExecutedOnVaults: taskExecutedOnVaults,
+      error,
+      sortedTaskExecutedOnVaults: {},
     }
 
-    if (error) {
-      logger.debug('UnhandledException', {
-        error: JSON.stringify(error),
-        path: flags.path,
-      })
-
-      callback?.(result)
-      handlerCommandError(error)
-    } else {
-      result.sortedTaskExecutedOnVaults = Object.entries(
-        result.sortedTaskExecutedOnVaults,
-      )
+    if (!error) {
+      result.success = true
+      result.sortedTaskExecutedOnVaults = Object.entries(taskExecutedOnVaults)
         .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
         .reduce<CommandsExecutedOnVaults>((acc, [key, value]) => {
           acc[key] = value
@@ -184,8 +175,16 @@ const action = async (
         console.log(JSON.stringify(result.sortedTaskExecutedOnVaults, null, 2))
       }
 
-      callback?.(result)
+      callback?.(null)
+      return result
     }
+
+    logger.error('UnhandledException', {
+      error: JSON.stringify(error),
+      path: flags.path,
+    })
+    callback?.(error)
+    handlerCommandError(error)
 
     return result
   }

@@ -15,6 +15,7 @@ import {
 import {
   FactoryFlagsWithVaults,
   InstalledPlugins,
+  StatsArgs,
   StatsCommandCallback,
   StatsCommandCallbackResult,
   StatsCommandIterator,
@@ -26,7 +27,7 @@ import { safeLoadConfig } from './config'
 
 const installedPlugins: InstalledPlugins = {}
 
-const statsVaultIterator: StatsCommandIterator<StatsFlags> = async (item) => {
+const statsVaultIterator: StatsCommandIterator = async (item) => {
   const { vault, config } = item
   const childLogger = logger.child({
     vault: { path: vault.path, name: vault.name },
@@ -69,7 +70,7 @@ const statsVaultIterator: StatsCommandIterator<StatsFlags> = async (item) => {
 const action = async (
   args: ArgInput,
   flags: FactoryFlagsWithVaults<StatsFlags>,
-  iterator: StatsCommandIterator<StatsFlags> = statsVaultIterator,
+  iterator: StatsCommandIterator = statsVaultIterator,
   callback?: StatsCommandCallback,
 ) => {
   const {
@@ -85,11 +86,15 @@ const action = async (
   const vaults = await loadVaults(flags.path)
   const selectedVaults = await vaultsSelector(vaults)
 
-  const items = mapVaultsIteratorItem(selectedVaults, config, flags)
+  const items = mapVaultsIteratorItem<
+    StatsArgs,
+    FactoryFlagsWithVaults<StatsFlags>
+  >(selectedVaults, config, args, flags)
 
   const statsVaultCallback = (error: Error | null | undefined) => {
     const result: StatsCommandCallbackResult = {
       success: false,
+      error,
       totalStats: {
         totalVaults: vaults.length,
         totalPlugins: config.plugins.length,
@@ -97,14 +102,7 @@ const action = async (
       installedPlugins,
     }
 
-    if (error) {
-      logger.debug('Error getting stats', { error })
-      result.error = error
-
-      callback?.(result)
-
-      handlerCommandError(error)
-    } else {
+    if (!error) {
       result.success = true
 
       const sortedInstalledPlugins = Object.entries(installedPlugins)
@@ -124,9 +122,13 @@ const action = async (
           console.log(JSON.stringify(sortedInstalledPlugins, null, 2))
         }
       }
+
+      return result
     }
 
-    callback?.(result)
+    logger.debug('Error getting stats', { error })
+    callback?.(error)
+    handlerCommandError(error)
 
     return result
   }

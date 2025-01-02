@@ -6,7 +6,11 @@ import {
   handleExceedRateLimitError,
 } from '../providers/github'
 import { modifyCommunityPlugins } from '../providers/plugins'
-import { loadVaults, vaultsSelector } from '../providers/vaults'
+import {
+  loadVaults,
+  mapVaultsIteratorItem,
+  vaultsSelector,
+} from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   InstallArgs,
@@ -15,20 +19,21 @@ import {
   InstallFlags,
   StagedPlugins,
 } from '../types/commands'
+import { handlerCommandError } from '../utils/command'
 import { PluginNotFoundInRegistryError } from '../utils/errors'
 import { logger } from '../utils/logger'
 import { safeLoadConfig, writeConfig } from './config'
 
-const installVaultIterator: InstallCommandIterator<InstallFlags> = async (
-  item,
-) => {
-  const { vault, config, flags, specific } = item
+const installVaultIterator: InstallCommandIterator = async (item) => {
+  const { vault, config, flags, args } = item
+  // Check if pluginId is provided and install only that plugin
+  const stagedPlugins = args.pluginId ? [{ id: args.pluginId }] : config.plugins
   const installedPlugins: StagedPlugins = []
   const failedPlugins: StagedPlugins = []
   const reinstallPlugins: StagedPlugins = []
   const result = { installedPlugins, failedPlugins, reinstallPlugins }
 
-  for (const stagePlugin of config.plugins) {
+  for (const stagePlugin of stagedPlugins) {
     const version = getPluginVersion(stagePlugin)
     const childLogger = logger.child({ plugin: { ...stagePlugin, version } })
     childLogger.info(
@@ -66,11 +71,9 @@ const installVaultIterator: InstallCommandIterator<InstallFlags> = async (
         await modifyCommunityPlugins(stagePlugin, vault.path, 'enable')
       }
 
-      if (specific) {
-        const newPlugins = new Set(config.plugins)
-        const updatedConfig = { ...config, plugins: [...newPlugins] }
-        writeConfig(updatedConfig, flags.config)
-      }
+      const updatedPlugins = new Set([...config.plugins, stagePlugin])
+      const updatedConfig = { ...config, plugins: [...updatedPlugins] }
+      writeConfig(updatedConfig, flags.config)
     } catch (error) {
       const failedPlugin = {
         ...stagePlugin,
@@ -98,7 +101,7 @@ const installVaultIterator: InstallCommandIterator<InstallFlags> = async (
 const action = async (
   args: InstallArgs,
   flags: FactoryFlagsWithVaults<InstallFlags>,
-  iterator: InstallCommandIterator<InstallFlags> = installVaultIterator,
+  iterator: InstallCommandIterator = installVaultIterator,
   callback?: InstallCommandCallback,
 ): Promise<void> => {
   const { path } = flags
@@ -116,40 +119,29 @@ const action = async (
   const vaults = await loadVaults(path)
   const selectedVaults = await vaultsSelector(vaults)
 
-  // Check if pluginId is provided and install only that plugin
-  const configWithPlugins = args.pluginId
-    ? { plugins: [{ id: args.pluginId }] }
-    : config
+  const items = mapVaultsIteratorItem<
+    InstallArgs,
+    FactoryFlagsWithVaults<InstallFlags>
+  >(selectedVaults, config, args, flags)
 
   const installCommandCallback: InstallCommandCallback = (error) => {
-    const result: ReturnType<InstallCommandCallback> = { success: false }
+    const result: ReturnType<InstallCommandCallback> = { success: false, error }
+    if (!error) {
+      result.success = true
 
-    if (error instanceof Error) {
-      logger.debug('Error installing plugins', { error })
-      result.error = error
-
-      callback?.(result)
+      callback?.(null)
 
       return result
     }
 
-    result.success = true
-
-    callback?.(result)
+    logger.debug('Error installing plugins', { error })
+    callback?.(error)
+    handlerCommandError(error)
 
     return result
   }
 
-  return each(
-    selectedVaults.map((vault) => ({
-      vault,
-      config: configWithPlugins,
-      flags,
-      specific: Boolean(args.pluginId),
-    })),
-    iterator,
-    installCommandCallback,
-  )
+  return each(items, iterator, installCommandCallback)
 }
 
 export default {

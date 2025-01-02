@@ -88,15 +88,15 @@ export const loadVaults = async (path: string): Promise<Vault[]> => {
   return vaults
 }
 
-export const mapVaultsIteratorItem = <T>(
+export const mapVaultsIteratorItem = <A, F>(
   vaults: Vault[],
   config: Config,
-  flags: T,
-  command?: string,
+  args: A,
+  flags: F,
 ) =>
   vaults.map((vault) => ({
     vault,
     config,
     flags,
-    command,
+    args,
   }))

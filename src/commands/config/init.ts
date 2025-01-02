@@ -59,19 +59,17 @@ export const action = async (
     const defaultConfig = createDefaultConfig(configPath)
 
     if (callback) {
-      callback({
-        success: true,
-      })
+      callback(null)
     }
+
     return defaultConfig
   } else if (error) {
     if (callback) {
-      callback({
-        success: false,
-        error,
-      })
+      callback(error)
     }
   }
+
+  callback?.(null)
 
   return config
 }

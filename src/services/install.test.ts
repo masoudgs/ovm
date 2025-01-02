@@ -27,7 +27,7 @@ describe('Command: install', () => {
         ...testCommonWithVaultPathFlags,
         enable: true,
       },
-      specific: true,
+      args: { pluginId: plugin5.id },
     })
 
     expect(result.installedPlugins[0].id).to.be.equal(config?.plugins[0].id)
@@ -54,7 +54,7 @@ describe('Command: install', () => {
         ...testCommonWithVaultPathFlags,
         enable: true,
       },
-      specific: true,
+      args: { pluginId },
     })
 
     expect(result.installedPlugins.length).to.equal(0)
