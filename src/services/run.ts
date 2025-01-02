@@ -37,7 +37,7 @@ const runCommandVaultIterator: RunCommandIterator = async (item) => {
 
   internalCustomLogger.debug(`Execute command`)
 
-  const vaultPathHash = btoa(vault.path)
+  const vaultPathHash = btoa(`${vault.name}:${vault.path}`)
   taskExecutedOnVaults[vaultPathHash] = {
     success: null,
     duration: '',
@@ -46,11 +46,8 @@ const runCommandVaultIterator: RunCommandIterator = async (item) => {
 
   try {
     const startDate = new Date()
-    const result = await asyncExecCustomCommand(
-      vault,
-      command,
-      flags?.runFromVaultDirectoryAsWorkDir,
-    )
+    const cwd = flags.cwd ? flags.cwd : vault.path
+    const result = await asyncExecCustomCommand(vault, command, cwd)
     const endDate = new Date()
     const durationLessThanSecond = endDate.getTime() - startDate.getTime()
     const durationMoreThanSecond = intervalToDuration({
@@ -134,7 +131,8 @@ const action = async (
       result.sortedTaskExecutedOnVaults = Object.entries(taskExecutedOnVaults)
         .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
         .reduce<CommandsExecutedOnVaults>((acc, [key, value]) => {
-          acc[key] = value
+          const [vaultName] = atob(key).split(':')
+          acc[vaultName] = value
           return acc
         }, {})
 

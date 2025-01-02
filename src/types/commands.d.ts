@@ -84,7 +84,7 @@ export interface StatsFlags {
 export type StatsArgs = Record<string, unknown>
 
 export interface RunFlags {
-  runFromVaultDirectoryAsWorkDir: boolean
+  cwd?: string
   output?: string
   unescape?: boolean
   async?: boolean

@@ -176,14 +176,13 @@ info: Run operation finished! {"custom_commands_log_path":"/var/folders/_v/j4w6k
 $ ovm r "echo 'Path: {0}'"
 info: Run command {"command":"echo 'Path: ~/Documents/obsidian/Career'","vault":{"name":"Career","path":"~/Documents/obsidian/Career"}}
 
-Path: ~/Documents/obsidian/Career
-
 info: Run operation finished! {"custom_commands_log_path":"/var/folders/_v/j4w6kv1s27b6xjfzvl5k6lqm0000gn/T/ovm-custom-command.json"}
-┌─────────┬─────────┬──────────┬───────┐
-│ (index) │ success │ duration │ error │
-├─────────┼─────────┼──────────┼───────┤
-│ Career  │ true    │ '10 ms'  │ null  │
-└─────────┴─────────┴──────────┴───────┘
+
+┌─────────┬─────────┬──────────┬───────┬─────────────────────────────────────────┐
+│ (index) │ success │ duration │ error │ stdout                                 │
+├─────────┼─────────┼──────────┼───────┼─────────────────────────────────────────┤
+│ Career  │ true    │ '10 ms'  │ null  │ 'Path: ~/Documents/obsidian/Career'    │
+└─────────┴─────────┴──────────┴───────┴─────────────────────────────────────────┘
 ```
 
 ### Reserved placeholders

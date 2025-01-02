@@ -1,6 +1,8 @@
 import { Flags, flush } from '@oclif/core'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import statsService from '../../services/stats'
+import { FactoryFlagsWithVaults, StatsFlags } from '../../types/commands'
+import { flagsInterceptor } from '../../utils/command'
 
 const { action } = statsService
 
@@ -33,7 +35,10 @@ export default class Stats extends FactoryCommandWithVaults {
   public async run(): Promise<void> {
     try {
       const { args, flags } = await this.parse(Stats)
-      return await action(args, this.flagsInterceptor(flags))
+      return await action(
+        args,
+        flagsInterceptor<FactoryFlagsWithVaults<StatsFlags>>(flags),
+      )
     } catch (error) {
       this.handleError(error)
       throw error

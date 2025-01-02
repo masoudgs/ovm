@@ -1,4 +1,5 @@
 import { expect } from 'chai'
+import { tmpdir } from 'os'
 import proxyquire from 'proxyquire'
 import sinon from 'sinon'
 import { RunCommandIterator } from '../types/commands'
@@ -26,7 +27,6 @@ describe('Command: run', () => {
       flags: {
         ...getTestCommonWithVaultPathFlags(config.path, vault.path),
         output: 'json',
-        runFromVaultDirectoryAsWorkDir: false,
       },
       args: {
         command: '',
@@ -45,7 +45,6 @@ describe('Command: run', () => {
       config,
       flags: {
         ...getTestCommonWithVaultPathFlags(config.path, vault.path),
-        runFromVaultDirectoryAsWorkDir: false,
       },
       args: { command: "echo 'Path: {0} {1}'" },
     })
@@ -64,7 +63,6 @@ describe('Command: run', () => {
       config,
       flags: {
         ...getTestCommonWithVaultPathFlags(config.path, vault.path),
-        runFromVaultDirectoryAsWorkDir: false,
       },
       args: { command: "echo 'Path: {0} {1} {10000}'" },
     })
@@ -94,7 +92,6 @@ describe('Command: run', () => {
       config,
       flags: {
         ...getTestCommonWithVaultPathFlags(config.path, vault.path),
-        runFromVaultDirectoryAsWorkDir: false,
       },
       args: { command: 'invalid-command' },
     })
@@ -103,6 +100,41 @@ describe('Command: run', () => {
     expect(result.success).to.be.false
     expect(result.error).to.be.instanceOf(Error)
     expect((result.error as Error).message).to.equal('Execution failed')
+
+    destroyVault(vault.path)
+  })
+
+  it('should not run command from vault directory', async () => {
+    const { vault, config } = setupVault()
+    const result = await runCommandVaultIterator({
+      vault,
+      config,
+      flags: {
+        ...getTestCommonWithVaultPathFlags(config.path, vault.path),
+        cwd: tmpdir(),
+      },
+      args: { command: 'echo $PWD' },
+    })
+
+    expect(result.success).to.be.true
+    expect(result.stdout?.toString().trim()).to.match(new RegExp(tmpdir()))
+
+    destroyVault(vault.path)
+  })
+
+  it('should run command from vault directory', async () => {
+    const { vault, config } = setupVault()
+    const result = await runCommandVaultIterator({
+      vault,
+      config,
+      flags: {
+        ...getTestCommonWithVaultPathFlags(config.path, vault.path),
+      },
+      args: { command: 'echo $PWD' },
+    })
+
+    expect(result.success).to.be.true
+    expect(result.stdout?.toString().trim()).to.match(new RegExp(vault.path))
 
     destroyVault(vault.path)
   })
