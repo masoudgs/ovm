@@ -1,7 +1,8 @@
 import { Args, Flags, flush } from '@oclif/core'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import runService from '../../services/run'
-import { RunFlags } from '../../types/commands'
+import { FactoryFlagsWithVaults, RunFlags } from '../../types/commands'
+import { flagsInterceptor } from '../../utils/command'
 
 const { action } = runService
 
@@ -66,7 +67,10 @@ export default class Run extends FactoryCommandWithVaults {
   public async run(): Promise<void> {
     try {
       const { args, flags } = await this.parse(Run)
-      await action(args, this.flagsInterceptor<RunFlags>(flags))
+      await action(
+        args,
+        flagsInterceptor<FactoryFlagsWithVaults<RunFlags>>(flags),
+      )
     } catch (error) {
       this.handleError(error)
     } finally {

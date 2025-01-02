@@ -11,6 +11,7 @@ import {
   InitCommandCallback,
   InitFlags,
 } from '../../types/commands'
+import { flagsInterceptor } from '../../utils/command'
 
 /**
  * Init command configure an ovm.json config file in user's home dir.
@@ -31,7 +32,7 @@ export default class Init extends FactoryCommand {
   public async run() {
     try {
       const { args, flags } = await this.parse(Init)
-      return action(args, this.flagsInterceptor<InitFlags>(flags))
+      return action(args, flagsInterceptor<FactoryFlags<InitFlags>>(flags))
     } catch (error) {
       this.handleError(error)
     } finally {
