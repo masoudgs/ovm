@@ -1,9 +1,8 @@
 import { checkbox } from '@inquirer/prompts'
-import { each, eachSeries, ErrorCallback } from 'async'
 import { glob } from 'glob'
 import { findVault, Vault } from 'obsidian-utils'
 import { basename, dirname } from 'path'
-import { CommonFlagsWithPath } from '../types/commands'
+import { Config } from '../services/config'
 import { isTestEnv } from '../utils/env'
 import { logger } from '../utils/logger'
 
@@ -89,16 +88,15 @@ export const loadVaults = async (path: string): Promise<Vault[]> => {
   return vaults
 }
 
-type GenericVaultIterator = (_vault: Vault) => void
-type GenericVaultCallback = ErrorCallback
-
-export const runOnVaults = (
+export const mapVaultsIteratorItem = <T>(
   vaults: Vault[],
-  flags: CommonFlagsWithPath,
-  iterator: GenericVaultIterator,
-  callback: GenericVaultCallback,
-) => {
-  const { async = false } = flags
-  const asyncFunction = async ? each : eachSeries
-  return asyncFunction(vaults, iterator, callback)
-}
+  config: Config,
+  flags: T,
+  command?: string,
+) =>
+  vaults.map((vault) => ({
+    vault,
+    config,
+    flags,
+    command,
+  }))

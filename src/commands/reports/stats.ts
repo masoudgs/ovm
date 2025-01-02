@@ -33,7 +33,7 @@ export default class Stats extends FactoryCommandWithVaults {
   public async run(): Promise<void> {
     try {
       const { args, flags } = await this.parse(Stats)
-      return await action(args, this.flagsInterceptor(flags), this.handleError)
+      return await action(args, this.flagsInterceptor(flags))
     } catch (error) {
       this.handleError(error)
       throw error

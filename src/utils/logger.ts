@@ -1,6 +1,7 @@
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { createLogger, format, transports } from 'winston'
+import { FactoryFlags, FactoryFlagsWithVaults } from '../types/commands'
 
 export const CUSTOM_COMMAND_LOGGER_FILE = join(
   tmpdir(),
@@ -37,3 +38,7 @@ export const customCommandLogger = createLogger({
     }),
   ],
 })
+
+export const silentCheck = <T>(
+  flags?: FactoryFlags<T> | FactoryFlagsWithVaults<T>,
+) => flags && 'silent' in flags && flags.silent

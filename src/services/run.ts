@@ -1,15 +1,19 @@
+import { each } from 'async'
 import { formatDuration, intervalToDuration } from 'date-fns'
-import { Vault } from 'obsidian-utils'
 import { asyncExecCustomCommand } from '../providers/command'
-import { loadVaults, runOnVaults, vaultsSelector } from '../providers/vaults'
+import {
+  loadVaults,
+  mapVaultsIteratorItem,
+  vaultsSelector,
+} from '../providers/vaults'
 import {
   CommandArgs,
   CommandsExecutedOnVaults,
+  CustomError,
   FactoryFlagsWithVaults,
   RunCommandCallback,
   RunCommandCallbackResult,
   RunCommandIterator,
-  RunCommandIteratorResult,
   RunFlags,
 } from '../types/commands'
 import { handlerCommandError } from '../utils/command'
@@ -17,27 +21,25 @@ import {
   CUSTOM_COMMAND_LOGGER_FILE,
   customCommandLogger,
   logger,
+  silentCheck,
 } from '../utils/logger'
 import { safeLoadConfig } from './config'
 
-/**
- * Command iterator for the prune command.
- *
- * @param {Vault} vault - The options for the prune command.
- * @param {CommandsExecutedOnVaults} taskExecutedOnVaults - The tasks executed on the
- * @param {string} command - The command to run.
- * @param {FactoryFlagsWithVaults<RunFlags>} flags - The flags for the command.
- * @param {RunCommandIterator} [iterator=() => {}] - Optional iterator function for processing each vault.
- * @returns {Promise<RunCommandIteratorResult>} - A promise that resolves when the action is complete.
- */
-const commandVaultIterator = async (
-  vault: Vault,
-  taskExecutedOnVaults: CommandsExecutedOnVaults,
-  command: string,
-  flags: FactoryFlagsWithVaults<RunFlags>,
-  iterator?: RunCommandIterator,
-): Promise<RunCommandIteratorResult> => {
-  logger.debug(`Execute command`, { vault, command })
+const taskExecutedOnVaults: CommandsExecutedOnVaults = {}
+
+const commandVaultIterator: RunCommandIterator<RunFlags> = async (item) => {
+  const { vault, command, flags } = item
+  const internalCustomLogger = logger.child({
+    vault: { path: vault.path, name: vault.name },
+    command,
+  })
+  const internalCustomCommandLogger = customCommandLogger.child({
+    vault: { path: vault.path, name: vault.name },
+    command,
+  })
+
+  internalCustomLogger.debug(`Execute command`)
+
   const vaultPathHash = btoa(vault.path)
   taskExecutedOnVaults[vaultPathHash] = {
     success: null,
@@ -48,9 +50,9 @@ const commandVaultIterator = async (
   try {
     const startDate = new Date()
     const result = await asyncExecCustomCommand(
-      command,
-      flags.runFromVaultDirectoryAsWorkDir,
       vault,
+      command,
+      flags?.runFromVaultDirectoryAsWorkDir,
     )
     const endDate = new Date()
     const durationLessThanSecond = endDate.getTime() - startDate.getTime()
@@ -71,113 +73,56 @@ const commandVaultIterator = async (
     }
 
     if (typeof result === 'string') {
+      const trimmedResult = result.trim()
       taskExecutedOnVaults[vaultPathHash]['success'] = true
-      taskExecutedOnVaults[vaultPathHash]['stdout'] = result
-      customCommandLogger.info('Executed successfully', {
-        result,
-        vault,
-        command,
+      taskExecutedOnVaults[vaultPathHash]['stdout'] = trimmedResult
+
+      internalCustomCommandLogger.info('Executed successfully', {
+        result: trimmedResult,
       })
-      if (!flags.silent) {
-        logger.info(`Run command`, { vault, command })
+
+      if (silentCheck<RunFlags>(flags)) {
+        internalCustomLogger.info(`Run command`, {
+          log: CUSTOM_COMMAND_LOGGER_FILE,
+        })
       }
 
-      if (iterator) {
-        iterator(taskExecutedOnVaults[vaultPathHash])
-      }
+      return taskExecutedOnVaults[vaultPathHash]
     } else {
       taskExecutedOnVaults[vaultPathHash]['success'] = false
-      taskExecutedOnVaults[vaultPathHash]['error'] = result.error
+      const { error } = result
 
-      customCommandLogger.error('Execution failed', {
-        error: result.error,
-        vault,
-        command,
+      taskExecutedOnVaults[vaultPathHash]['error'] = error
+
+      internalCustomCommandLogger.error('Execution failed', {
+        error,
       })
 
-      if (iterator) {
-        iterator(taskExecutedOnVaults[vaultPathHash])
-      }
+      return taskExecutedOnVaults[vaultPathHash]
     }
   } catch (error) {
+    const typedError = error as CustomError
     taskExecutedOnVaults[vaultPathHash]['success'] = false
-    taskExecutedOnVaults[vaultPathHash]['error'] = error as Error
-    customCommandLogger.error('Execution failed', {
+    taskExecutedOnVaults[vaultPathHash]['error'] = typedError
+    internalCustomCommandLogger.error('Execution failed', {
       error,
-      vault,
-      command,
     })
 
-    if (iterator) {
-      iterator(taskExecutedOnVaults[vaultPathHash])
-    }
+    return taskExecutedOnVaults[vaultPathHash]
   }
-
-  return taskExecutedOnVaults[vaultPathHash]
-}
-
-/**
- * Command callback for the prune command.
- *
- * @param {Error | null} error - The error that occurred during the command.
- * @param {CommandsExecutedOnVaults} taskExecutedOnVaults - The tasks executed on the vaults.
- * @param {FactoryFlagsWithVaults<RunFlags>} flags - The flags for the command.
- * @param {RunCommandCallback} [callback=() => {}] - Optional callback function for processing the results.
- * @returns {RunCommandCallbackResult}
- */
-const commandVaultCallback = (
-  error: Error | null | undefined,
-  taskExecutedOnVaults: CommandsExecutedOnVaults,
-  flags: FactoryFlagsWithVaults<RunFlags>,
-  callback?: RunCommandCallback,
-): RunCommandCallbackResult => {
-  const result: RunCommandCallbackResult = {
-    success: false,
-    sortedTaskExecutedOnVaults: taskExecutedOnVaults,
-  }
-
-  if (error) {
-    logger.debug('UnhandledException', {
-      error: JSON.stringify(error),
-      path: flags.path,
-    })
-    handlerCommandError(error)
-  } else {
-    result.sortedTaskExecutedOnVaults = Object.entries(
-      result.sortedTaskExecutedOnVaults,
-    )
-      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-      .reduce<CommandsExecutedOnVaults>((acc, [key, value]) => {
-        acc[key] = value
-        return acc
-      }, {})
-
-    logger.info('Run operation finished!', {
-      custom_commands_log_path: CUSTOM_COMMAND_LOGGER_FILE,
-    })
-
-    if (flags.output === 'table') {
-      console.table(result.sortedTaskExecutedOnVaults)
-    } else if (flags.output === 'json') {
-      console.log(JSON.stringify(result.sortedTaskExecutedOnVaults, null, 2))
-    }
-  }
-
-  if (callback) {
-    callback(result)
-  }
-
-  return result
 }
 
 const action = async (
   args: CommandArgs,
   flags: FactoryFlagsWithVaults<RunFlags>,
-  iterator?: RunCommandIterator,
+  iterator: RunCommandIterator<RunFlags> = commandVaultIterator,
   callback?: RunCommandCallback,
 ) => {
-  const { success: loadConfigSuccess, error: loadConfigError } =
-    await safeLoadConfig(flags.config)
+  const {
+    success: loadConfigSuccess,
+    error: loadConfigError,
+    data: config,
+  } = await safeLoadConfig(flags.config)
   if (!loadConfigSuccess) {
     logger.error('Failed to load config', { error: loadConfigError })
     process.exit(1)
@@ -194,30 +139,61 @@ const action = async (
   const vaults = await loadVaults(flags.path)
   const selectedVaults = await vaultsSelector(vaults)
 
-  const taskExecutedOnVaults: CommandsExecutedOnVaults = {}
-
   customCommandLogger.debug('Running command on selected vaults...', {
     vaults: selectedVaults.length,
   })
 
-  return runOnVaults(
+  const items = mapVaultsIteratorItem(
     selectedVaults,
+    config,
     flags,
-    (vault) =>
-      commandVaultIterator(
-        vault,
-        taskExecutedOnVaults,
-        args.command,
-        flags,
-        iterator,
-      ),
-    (error) =>
-      commandVaultCallback(error, taskExecutedOnVaults, flags, callback),
+    args.command,
   )
+
+  const commandVaultCallback = (error: CustomError | null | undefined) => {
+    const result: RunCommandCallbackResult = {
+      success: false,
+      sortedTaskExecutedOnVaults: taskExecutedOnVaults,
+    }
+
+    if (error) {
+      logger.debug('UnhandledException', {
+        error: JSON.stringify(error),
+        path: flags.path,
+      })
+
+      callback?.(result)
+      handlerCommandError(error)
+    } else {
+      result.sortedTaskExecutedOnVaults = Object.entries(
+        result.sortedTaskExecutedOnVaults,
+      )
+        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+        .reduce<CommandsExecutedOnVaults>((acc, [key, value]) => {
+          acc[key] = value
+          return acc
+        }, {})
+
+      logger.info('Run operation finished!', {
+        custom_commands_log_path: CUSTOM_COMMAND_LOGGER_FILE,
+      })
+
+      if (flags.output === 'table') {
+        console.table(result.sortedTaskExecutedOnVaults)
+      } else if (flags.output === 'json') {
+        console.log(JSON.stringify(result.sortedTaskExecutedOnVaults, null, 2))
+      }
+
+      callback?.(result)
+    }
+
+    return result
+  }
+
+  return each(items, iterator, commandVaultCallback)
 }
 
 export default {
   action,
   commandVaultIterator,
-  commandVaultCallback,
 }

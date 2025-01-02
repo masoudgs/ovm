@@ -3,13 +3,14 @@ import { handle } from '@oclif/core'
 import { logger } from './logger'
 
 export const handlerCommandError = (error: unknown) => {
-  if (process.env.CI) {
+  if (process.env.CI || process.env.CI === 'true') {
     throw error
   }
-  if (error instanceof ExitPromptError) {
+
+  if (error instanceof ExitPromptError === true) {
     logger.debug('Exit prompt error:', { error })
-  } else if (error instanceof Error) {
+  } else {
     logger.debug('An error occurred while installation:', { error })
-    handle(error)
+    return handle(error as Error)
   }
 }

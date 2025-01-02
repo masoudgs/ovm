@@ -1,5 +1,4 @@
 import { expect } from 'chai'
-import { loadVaults, vaultsSelector } from '../providers/vaults'
 import { plugin1 } from '../utils/fixtures/plugins'
 import { ConfigSchema } from './config'
 import statsService from './stats'
@@ -16,17 +15,15 @@ const { statsVaultIterator } = statsService
 
 describe('Command: stats', () => {
   it('should display stats for vaults and 0 plugins', async () => {
-    const { vault } = setupVault(ConfigSchema.parse({ plugins: [] }))
-    const vaults = await loadVaults(vault.path)
-    const selectedVaults = await vaultsSelector(vaults)
+    const { vault, config } = setupVault(ConfigSchema.parse({ plugins: [] }))
     const installedPlugins = {}
-    const result = await statsVaultIterator(
-      selectedVaults[0],
-      ConfigSchema.parse({ plugins: [] }),
-      installedPlugins,
-    )
+    const result = await statsVaultIterator({
+      vault,
+      config: ConfigSchema.parse({ plugins: [] }),
+      flags: getTestCommonWithVaultPathFlags(config.path, vault.path),
+    })
 
-    expect(result.totalInstalledPlugins).to.be.equal(0)
+    expect(result.installedPlugins).to.be.equal(0)
     expect(Object.keys(installedPlugins).length).to.be.equal(0)
 
     destroyVault(vault.path)
@@ -39,24 +36,31 @@ describe('Command: stats', () => {
       config.path,
       vault.path,
     )
-    const vaults = await loadVaults(vault.path)
-    const selectedVaults = await vaultsSelector(vaults)
 
-    await installVaultIterator(
-      selectedVaults[0],
-      ConfigSchema.parse({ plugins: [plugin1] }),
-      { ...testCommonWithVaultPathFlags, enable: true },
-    )
+    const installResult = await installVaultIterator({
+      vault,
+      config: {
+        ...sampleConfig,
+        plugins: [plugin1],
+      },
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
+      },
+      specific: true,
+    })
+
+    expect(installResult.installedPlugins[0].id).to.be.equal(plugin1.id)
 
     const installedPlugins = {}
 
-    const result = await statsVaultIterator(
-      selectedVaults[0],
-      ConfigSchema.parse({ plugins: [plugin1] }),
-      installedPlugins,
-    )
+    const result = await statsVaultIterator({
+      vault,
+      config: ConfigSchema.parse({ plugins: [plugin1] }),
+      flags: getTestCommonWithVaultPathFlags(config.path, vault.path),
+    })
 
-    expect(result.totalInstalledPlugins).to.be.equal(1)
+    expect(result.installedPlugins).to.be.equal(1)
 
     for (const key in installedPlugins) {
       expect(key).to.match(new RegExp(`${plugin1.id}@${plugin1.version}`))

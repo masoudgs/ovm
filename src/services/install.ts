@@ -1,15 +1,12 @@
-import {
-  installPluginFromGithub,
-  isPluginInstalled,
-  Vault,
-} from 'obsidian-utils'
+import { each } from 'async'
+import { installPluginFromGithub, isPluginInstalled } from 'obsidian-utils'
 import {
   findPluginInRegistry,
   getPluginVersion,
   handleExceedRateLimitError,
 } from '../providers/github'
 import { modifyCommunityPlugins } from '../providers/plugins'
-import { loadVaults, runOnVaults, vaultsSelector } from '../providers/vaults'
+import { loadVaults, vaultsSelector } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   InstallArgs,
@@ -20,14 +17,12 @@ import {
 } from '../types/commands'
 import { PluginNotFoundInRegistryError } from '../utils/errors'
 import { logger } from '../utils/logger'
-import { Config, safeLoadConfig, writeConfig } from './config'
+import { safeLoadConfig, writeConfig } from './config'
 
-const installVaultIterator = async (
-  vault: Vault,
-  config: Config,
-  flags: FactoryFlagsWithVaults<InstallFlags>,
-  specific: boolean = false,
+const installVaultIterator: InstallCommandIterator<InstallFlags> = async (
+  item,
 ) => {
+  const { vault, config, flags, specific } = item
   const installedPlugins: StagedPlugins = []
   const failedPlugins: StagedPlugins = []
   const reinstallPlugins: StagedPlugins = []
@@ -100,43 +95,11 @@ const installVaultIterator = async (
   return result
 }
 
-const installPluginsInVaults = (
-  vaults: Vault[],
-  config: Config,
-  flags: FactoryFlagsWithVaults<InstallFlags>,
-  specific: boolean,
-  iterator: InstallCommandIterator,
-  callback: InstallCommandCallback,
-) => {
-  return runOnVaults(
-    vaults,
-    flags,
-    (vault) => installVaultIterator(vault, config, flags, specific),
-    (error) => {
-      if (error) {
-        logger.debug('Error installing plugins', { error })
-        return callback({ success: false, error })
-      }
-
-      return callback({ success: true })
-    },
-  )
-}
-
-/**
- *
- *
- * @param {InstallArgs} args
- * @param {FactoryFlagsWithVaults<InstallFlags>} flags
- * @param {InstallCommandIterator} [iterator=() => {}]
- * @param {InstallCommandCallback} [callback=() => {}]
- * @return {Promise<void>}
- */
 const action = async (
   args: InstallArgs,
   flags: FactoryFlagsWithVaults<InstallFlags>,
-  iterator: InstallCommandIterator = () => {},
-  callback: InstallCommandCallback = () => {},
+  iterator: InstallCommandIterator<InstallFlags> = installVaultIterator,
+  callback?: InstallCommandCallback,
 ): Promise<void> => {
   const { path } = flags
   const {
@@ -158,13 +121,34 @@ const action = async (
     ? { plugins: [{ id: args.pluginId }] }
     : config
 
-  return installPluginsInVaults(
-    selectedVaults,
-    configWithPlugins,
-    flags,
-    false,
+  const installCommandCallback: InstallCommandCallback = (error) => {
+    const result: ReturnType<InstallCommandCallback> = { success: false }
+
+    if (error instanceof Error) {
+      logger.debug('Error installing plugins', { error })
+      result.error = error
+
+      callback?.(result)
+
+      return result
+    }
+
+    result.success = true
+
+    callback?.(result)
+
+    return result
+  }
+
+  return each(
+    selectedVaults.map((vault) => ({
+      vault,
+      config: configWithPlugins,
+      flags,
+      specific: Boolean(args.pluginId),
+    })),
     iterator,
-    callback,
+    installCommandCallback,
   )
 }
 

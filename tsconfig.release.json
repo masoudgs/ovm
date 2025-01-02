@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "types": ["node", "mocha"],
     "noImplicitAny": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "sourceMap": true,
     "forceConsistentCasingInFileNames": true
   },

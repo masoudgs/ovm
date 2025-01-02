@@ -51,6 +51,7 @@ export default class Run extends FactoryCommandWithVaults {
       description:
         'Command to run and use specified vaults with each execution.',
       required: true,
+      default: '',
     }),
   }
 
