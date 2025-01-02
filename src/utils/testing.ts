@@ -79,7 +79,7 @@ export const destroyVault = (vaultPath: string) => {
 
   if (normalizedPath && existsSync(normalizedPath)) {
     fse.emptyDirSync(normalizedPath)
-    fsp.rmdir(normalizedPath, { recursive: true })
+    fsp.rmdir(normalizedPath)
   }
 
   const customLogsPath = path.normalize(CUSTOM_COMMAND_LOGGER_FILE)
