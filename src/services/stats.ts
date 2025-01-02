@@ -54,8 +54,10 @@ const statsVaultIterator: StatsCommandIterator = async (item) => {
     if (await isPluginInstalled(stagePlugin.id, vault.path)) {
       stats.installedPlugins += 1
       installedPlugins[pluginNameWithSize] = [
-        ...(installedPlugins[pluginNameWithSize] || []),
-        vault.name,
+        ...new Set([
+          ...(installedPlugins[pluginNameWithSize] || []),
+          vault.name,
+        ]),
       ]
     }
   }
@@ -91,7 +93,7 @@ const action = async (
     if (!error) {
       result.success = true
 
-      const sortedInstalledPlugins = Object.entries(installedPlugins)
+      const sortedInstalledPlugins = Object.entries(result.installedPlugins)
         .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
         .reduce<InstalledPlugins>((acc, [key, value]) => {
           acc[key] = value

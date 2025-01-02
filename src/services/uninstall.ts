@@ -1,6 +1,6 @@
 import { each } from 'async'
 import { isPluginInstalled } from 'obsidian-utils'
-import { removePluginDir } from '../providers/plugins'
+import { deduplicatePlugins, removePluginDir } from '../providers/plugins'
 import { getSelectedVaults, mapVaultsIteratorItem } from '../providers/vaults'
 import { loadConfig, Plugin, writeConfig } from '../services/config'
 import {
@@ -36,10 +36,11 @@ const uninstallVaultIterator: UninstallCommandIterator = async (item) => {
     try {
       await removePluginDir(stagePlugin.id, vault.path)
 
-      const updatedPlugins = new Set(
-        config.plugins.filter((plugin) => plugin.id !== stagePlugin.id),
-      )
+      const updatedPlugins = new Set([
+        ...deduplicatePlugins(config.plugins, stagePlugin),
+      ])
       const updatedConfig = { ...config, plugins: [...updatedPlugins] }
+
       writeConfig(updatedConfig, flags.config)
 
       childLogger.info(`Uninstalled plugin`)
@@ -66,15 +67,10 @@ const action = async (
   const config = await loadConfig(flags.config)
   const selectedVaults = await getSelectedVaults(flags.path)
 
-  // Check if pluginId is provided and install only that plugin
-  const configWithPlugins = args.pluginId
-    ? { plugins: [{ id: args.pluginId }] }
-    : config
-
   const items = mapVaultsIteratorItem<
     UninstallArgs,
     FactoryFlagsWithVaults<UninstallFlags>
-  >(selectedVaults, configWithPlugins, flags, args)
+  >(selectedVaults, config, flags, args)
 
   const uninstallCommandCallback: UninstallCommandCallback = (error) => {
     const result: UninstallCommandCallbackResult = {

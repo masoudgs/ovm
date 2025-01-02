@@ -5,7 +5,10 @@ import {
   getPluginVersion,
   handleExceedRateLimitError,
 } from '../providers/github'
-import { modifyCommunityPlugins } from '../providers/plugins'
+import {
+  deduplicatePlugins,
+  modifyCommunityPlugins,
+} from '../providers/plugins'
 import { getSelectedVaults, mapVaultsIteratorItem } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
@@ -64,7 +67,11 @@ const installVaultIterator: InstallCommandIterator = async (item) => {
         await modifyCommunityPlugins(stagePlugin, vault.path, 'enable')
       }
 
-      const updatedPlugins = new Set([...config.plugins, stagePlugin])
+      const updatedPlugins = new Set([
+        ...deduplicatePlugins(config.plugins, stagePlugin),
+        { ...stagePlugin, version },
+      ])
+
       const updatedConfig = { ...config, plugins: [...updatedPlugins] }
 
       writeConfig(updatedConfig, flags.config)

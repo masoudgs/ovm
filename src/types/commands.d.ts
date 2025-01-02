@@ -124,11 +124,11 @@ export type StatsCommandIterator = (
 ) => Promise<StatsCommandIteratorResult>
 
 export type StatsCommandCallbackResult = CommandCallbackBaseResult & {
-  totalStats?: {
+  totalStats: {
     totalVaults: number
     totalPlugins: number
   }
-  installedPlugins?: InstalledPlugins
+  installedPlugins: InstalledPlugins
 }
 
 export type StatsCommandCallback = (
