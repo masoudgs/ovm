@@ -1,12 +1,8 @@
 import { each } from 'async'
 import { isPluginInstalled } from 'obsidian-utils'
 import { removePluginDir } from '../providers/plugins'
-import {
-  loadVaults,
-  mapVaultsIteratorItem,
-  vaultsSelector,
-} from '../providers/vaults'
-import { Plugin, writeConfig } from '../services/config'
+import { getSelectedVaults, mapVaultsIteratorItem } from '../providers/vaults'
+import { loadConfig, Plugin, writeConfig } from '../services/config'
 import {
   FactoryFlagsWithVaults,
   UninstallArgs,
@@ -17,7 +13,6 @@ import {
 } from '../types/commands'
 import { handlerCommandError } from '../utils/command'
 import { logger } from '../utils/logger'
-import { safeLoadConfig } from './config'
 
 const uninstallVaultIterator: UninstallCommandIterator = async (item) => {
   const { vault, config, flags, args } = item
@@ -68,20 +63,8 @@ const action = async (
   iterator: UninstallCommandIterator = uninstallVaultIterator,
   callback?: UninstallCommandCallback,
 ): Promise<void> => {
-  const { path } = flags
-  const {
-    success: loadConfigSuccess,
-    data: config,
-    error: loadConfigError,
-  } = await safeLoadConfig(flags.config)
-
-  if (!loadConfigSuccess) {
-    logger.error('Failed to load config', { error: loadConfigError })
-    process.exit(1)
-  }
-
-  const vaults = await loadVaults(path)
-  const selectedVaults = await vaultsSelector(vaults)
+  const config = await loadConfig(flags.config)
+  const selectedVaults = await getSelectedVaults(flags.path)
 
   // Check if pluginId is provided and install only that plugin
   const configWithPlugins = args.pluginId

@@ -100,3 +100,8 @@ export const mapVaultsIteratorItem = <A, F>(
     flags,
     args,
   }))
+
+export const getSelectedVaults = async (path: string) => {
+  const vaults = await loadVaults(path)
+  return await vaultsSelector(vaults)
+}

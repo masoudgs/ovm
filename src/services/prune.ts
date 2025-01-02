@@ -1,11 +1,7 @@
 import { ArgInput } from '@oclif/core/lib/parser'
 import { each } from 'async'
 import { listInstalledPlugins, removePluginDir } from '../providers/plugins'
-import {
-  loadVaults,
-  mapVaultsIteratorItem,
-  vaultsSelector,
-} from '../providers/vaults'
+import { getSelectedVaults, mapVaultsIteratorItem } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   PruneArgs,
@@ -17,7 +13,7 @@ import {
 } from '../types/commands'
 import { handlerCommandError } from '../utils/command'
 import { logger } from '../utils/logger'
-import { safeLoadConfig } from './config'
+import { loadConfig } from './config'
 
 const pruneVaultIterator: PruneCommandIterator = async (item) => {
   const { vault, config } = item
@@ -50,19 +46,8 @@ const action = async (
   iterator: PruneCommandIterator = pruneVaultIterator,
   callback?: PruneCommandCallback,
 ): Promise<void> => {
-  const {
-    success: loadConfigSuccess,
-    data: config,
-    error: loadConfigError,
-  } = await safeLoadConfig(flags.config)
-
-  if (!loadConfigSuccess) {
-    logger.error('Failed to load config', { error: loadConfigError })
-    process.exit(1)
-  }
-
-  const vaults = await loadVaults(flags.path)
-  const selectedVaults = await vaultsSelector(vaults)
+  const config = await loadConfig(flags.config)
+  const selectedVaults = await getSelectedVaults(flags.path)
   const items = mapVaultsIteratorItem<
     PruneArgs,
     FactoryFlagsWithVaults<PruneFlags>

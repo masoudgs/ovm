@@ -6,11 +6,7 @@ import {
   handleExceedRateLimitError,
 } from '../providers/github'
 import { modifyCommunityPlugins } from '../providers/plugins'
-import {
-  loadVaults,
-  mapVaultsIteratorItem,
-  vaultsSelector,
-} from '../providers/vaults'
+import { getSelectedVaults, mapVaultsIteratorItem } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   InstallArgs,
@@ -20,9 +16,10 @@ import {
   StagedPlugins,
 } from '../types/commands'
 import { handlerCommandError } from '../utils/command'
+
 import { PluginNotFoundInRegistryError } from '../utils/errors'
 import { logger } from '../utils/logger'
-import { safeLoadConfig, writeConfig } from './config'
+import { loadConfig, writeConfig } from './config'
 
 const installVaultIterator: InstallCommandIterator = async (item) => {
   const { vault, config, flags, args } = item
@@ -105,20 +102,8 @@ const action = async (
   iterator: InstallCommandIterator = installVaultIterator,
   callback?: InstallCommandCallback,
 ): Promise<void> => {
-  const { path } = flags
-  const {
-    success: loadConfigSuccess,
-    data: config,
-    error: loadConfigError,
-  } = await safeLoadConfig(flags.config)
-
-  if (!loadConfigSuccess) {
-    logger.error('Failed to load config', { error: loadConfigError })
-    process.exit(1)
-  }
-
-  const vaults = await loadVaults(path)
-  const selectedVaults = await vaultsSelector(vaults)
+  const config = await loadConfig(flags.config)
+  const selectedVaults = await getSelectedVaults(flags.path)
 
   const items = mapVaultsIteratorItem<
     InstallArgs,

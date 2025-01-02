@@ -1,4 +1,7 @@
 import { expect } from 'chai'
+import proxyquire from 'proxyquire'
+import sinon from 'sinon'
+import { RunCommandIterator } from '../types/commands'
 import {
   destroyVault,
   getTestCommonWithVaultPathFlags,
@@ -6,12 +9,18 @@ import {
 } from '../utils/testing'
 import runService from './run'
 
-const { commandVaultIterator } = runService
+const { runCommandVaultIterator } = runService
+
+const sandbox = sinon.createSandbox()
 
 describe('Command: run', () => {
+  afterEach(() => {
+    sandbox.restore()
+  })
+
   it('should fail with invalid command', async () => {
     const { vault, config } = setupVault()
-    const result = await commandVaultIterator({
+    const result = await runCommandVaultIterator({
       vault,
       config,
       flags: {
@@ -31,7 +40,7 @@ describe('Command: run', () => {
 
   it('should echo path and name of vault by echo command and reserved placeholder {0} {1}', async () => {
     const { vault, config } = setupVault()
-    const result = await commandVaultIterator({
+    const result = await runCommandVaultIterator({
       vault,
       config,
       flags: {
@@ -50,7 +59,7 @@ describe('Command: run', () => {
 
   it('should echo path and name of vault by echo command and reserved placeholder {0} {1} and not {10000}', async () => {
     const { vault, config } = setupVault()
-    const result = await commandVaultIterator({
+    const result = await runCommandVaultIterator({
       vault,
       config,
       flags: {
@@ -64,6 +73,36 @@ describe('Command: run', () => {
 
     const expected = `Path: ${vault.path} ${vault.name} {10000}`
     expect(result.stdout?.toString().trim()).to.not.match(new RegExp(expected))
+
+    destroyVault(vault.path)
+  })
+
+  it('should handle asyncExecCustomCommand rejection', async () => {
+    const asyncExecCustomCommandStub = sandbox
+      .stub()
+      .rejects(new Error('Execution failed'))
+    const {
+      default: { runCommandVaultIterator },
+    } = proxyquire.noCallThru()('./run', {
+      '../providers/command': {
+        asyncExecCustomCommand: asyncExecCustomCommandStub,
+      },
+    })
+    const { vault, config } = setupVault()
+    const result = await (runCommandVaultIterator as RunCommandIterator)({
+      vault,
+      config,
+      flags: {
+        ...getTestCommonWithVaultPathFlags(config.path, vault.path),
+        runFromVaultDirectoryAsWorkDir: false,
+      },
+      args: { command: 'invalid-command' },
+    })
+
+    expect(asyncExecCustomCommandStub.calledOnce).to.be.true
+    expect(result.success).to.be.false
+    expect(result.error).to.be.instanceOf(Error)
+    expect((result.error as Error).message).to.equal('Execution failed')
 
     destroyVault(vault.path)
   })
