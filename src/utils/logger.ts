@@ -1,6 +1,11 @@
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { createLogger, format, transports } from 'winston'
+import {
+  CommonFlags,
+  FactoryFlags,
+  FactoryFlagsWithVaults,
+} from '../types/commands'
 
 export const CUSTOM_COMMAND_LOGGER_FILE = join(
   tmpdir(),
@@ -37,3 +42,21 @@ export const customCommandLogger = createLogger({
     }),
   ],
 })
+
+export const silentCheck = <T>(
+  flags?: FactoryFlags<T> | FactoryFlagsWithVaults<T>,
+) => flags && 'silent' in flags && flags.silent
+
+export const enableLoggingTimestamp = (timestamp: boolean) => {
+  process.env.OVM_ENABLE_LOG_TIMESTAMP = timestamp ? 'true' : 'false'
+}
+
+export const enableDebugLogLevel = (
+  debug: boolean,
+  flags: CommonFlags | FactoryFlags<unknown> | FactoryFlagsWithVaults<unknown>,
+) => {
+  if (debug) {
+    logger.level = 'debug'
+    logger.debug(`Command called`, { flags })
+  }
+}

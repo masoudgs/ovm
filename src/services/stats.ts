@@ -1,38 +1,39 @@
-import { handle } from '@oclif/core'
 import { ArgInput } from '@oclif/core/lib/interfaces'
+import { each } from 'async'
 import fastFolderSize from 'fast-folder-size'
 import { filesize } from 'filesize'
 import { existsSync } from 'fs'
 import { readFile } from 'fs/promises'
-import {
-  isPluginInstalled,
-  Vault,
-  vaultPathToPluginsPath,
-} from 'obsidian-utils'
+import { isPluginInstalled, vaultPathToPluginsPath } from 'obsidian-utils'
 import { join } from 'path'
 import { promisify } from 'util'
-import { loadVaults, runOnVaults, vaultsSelector } from '../providers/vaults'
+import { getSelectedVaults, mapVaultsIteratorItem } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
   InstalledPlugins,
+  StatsArgs,
   StatsCommandCallback,
   StatsCommandCallbackResult,
   StatsCommandIterator,
   StatsFlags,
 } from '../types/commands'
+import { handlerCommandError } from '../utils/command'
 import { logger } from '../utils/logger'
-import { Config, safeLoadConfig } from './config'
+import { loadConfig } from './config'
 
-const statsVaultIterator = async (
-  vault: Vault,
-  config: Config,
-  allConfigInstalledPlugins: InstalledPlugins,
-  iterator?: StatsCommandIterator,
-) => {
-  logger.debug(`Statistics for vault`, { vault })
+const installedPlugins: InstalledPlugins = {}
+
+const statsVaultIterator: StatsCommandIterator = async (item) => {
+  const { vault, config } = item
+  const childLogger = logger.child({
+    vault: { path: vault.path, name: vault.name },
+  })
+
+  childLogger.debug(`Statistics for vault`)
+
   const stats = {
-    totalPlugins: config.plugins.length,
-    totalInstalledPlugins: 0,
+    configuredPlugins: config.plugins.length,
+    installedPlugins: 0,
   }
 
   const pluginsDir = vaultPathToPluginsPath(vault.path)
@@ -51,105 +52,77 @@ const statsVaultIterator = async (
     const pluginNameWithSize = `${stagePlugin.id}@${manifestVersion} (${filesize(pluginDirSize as number)})`
 
     if (await isPluginInstalled(stagePlugin.id, vault.path)) {
-      stats.totalInstalledPlugins += 1
-      allConfigInstalledPlugins[pluginNameWithSize] = [
-        ...(allConfigInstalledPlugins[pluginNameWithSize] || []),
+      stats.installedPlugins += 1
+      installedPlugins[pluginNameWithSize] = [
+        ...(installedPlugins[pluginNameWithSize] || []),
         vault.name,
       ]
-    }
-
-    if (iterator) {
-      iterator(stats)
     }
   }
 
   return stats
 }
 
-const statsVaultCallback = (
-  error: Error | null | undefined,
-  vaults: Vault[],
-  config: Config,
-  installedPlugins: InstalledPlugins,
-  flags: FactoryFlagsWithVaults<StatsFlags>,
-  callback?: StatsCommandCallback,
-) => {
-  const result: StatsCommandCallbackResult = {
-    success: false,
-    totalStats: {
-      totalVaults: vaults.length,
-      totalPlugins: config.plugins.length,
-    },
-    installedPlugins,
-  }
-  if (error) {
-    logger.debug('Error getting stats', { error })
-    callback?.({ success: false, error })
-    handle(error)
-  } else {
-    const sortedInstalledPlugins = Object.entries(installedPlugins)
-      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-      .reduce<InstalledPlugins>((acc, [key, value]) => {
-        acc[key] = value
-        return acc
-      }, {})
-
-    if (flags.output === 'table') {
-      console.table(result.totalStats)
-      console.table(sortedInstalledPlugins)
-    } else if (flags.output === 'json') {
-      console.log(JSON.stringify(result.totalStats, null, 2))
-
-      if (Object.keys(sortedInstalledPlugins).length > 0) {
-        console.log(JSON.stringify(sortedInstalledPlugins, null, 2))
-      }
-    }
-
-    callback?.(result)
-  }
-
-  return result
-}
-
 const action = async (
   args: ArgInput,
   flags: FactoryFlagsWithVaults<StatsFlags>,
-  iterator?: StatsCommandIterator,
+  iterator: StatsCommandIterator = statsVaultIterator,
   callback?: StatsCommandCallback,
 ) => {
-  const {
-    success: loadConfigSuccess,
-    data: config,
-    error: loadConfigError,
-  } = await safeLoadConfig(flags.config)
-  if (!loadConfigSuccess) {
-    logger.error('Failed to load config', { error: loadConfigError })
-    process.exit(1)
+  const config = await loadConfig(flags.config)
+  const selectedVaults = await getSelectedVaults(flags.path)
+
+  const items = mapVaultsIteratorItem<
+    StatsArgs,
+    FactoryFlagsWithVaults<StatsFlags>
+  >(selectedVaults, config, flags, args)
+
+  const statsVaultCallback = (error: Error | null | undefined) => {
+    const result: StatsCommandCallbackResult = {
+      success: false,
+      error,
+      totalStats: {
+        totalVaults: selectedVaults.length,
+        totalPlugins: config.plugins.length,
+      },
+      installedPlugins,
+    }
+
+    if (!error) {
+      result.success = true
+
+      const sortedInstalledPlugins = Object.entries(installedPlugins)
+        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+        .reduce<InstalledPlugins>((acc, [key, value]) => {
+          acc[key] = value
+          return acc
+        }, {})
+
+      if (flags.output === 'table') {
+        console.table(result.totalStats)
+        console.table(sortedInstalledPlugins)
+      } else if (flags.output === 'json') {
+        console.log(JSON.stringify(result.totalStats, null, 2))
+
+        if (Object.keys(sortedInstalledPlugins).length > 0) {
+          console.log(JSON.stringify(sortedInstalledPlugins, null, 2))
+        }
+      }
+
+      return result
+    }
+
+    logger.debug('Error getting stats', { error })
+    callback?.(error)
+    handlerCommandError(error)
+
+    return result
   }
 
-  const vaults = await loadVaults(flags.path)
-  const selectedVaults = await vaultsSelector(vaults)
-
-  const installedPlugins: InstalledPlugins = {}
-
-  return runOnVaults(
-    selectedVaults,
-    flags,
-    (vault) => statsVaultIterator(vault, config, installedPlugins, iterator),
-    (error) =>
-      statsVaultCallback(
-        error,
-        selectedVaults,
-        config,
-        installedPlugins,
-        flags,
-        callback,
-      ),
-  )
+  return each(items, iterator, statsVaultCallback)
 }
 
 export default {
   action,
   statsVaultIterator,
-  statsVaultCallback,
 }

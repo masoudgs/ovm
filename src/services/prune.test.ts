@@ -1,13 +1,12 @@
 import { expect } from 'chai'
 import { modifyCommunityPlugins } from '../providers/plugins'
-import { loadVaults, vaultsSelector } from '../providers/vaults'
 import { plugin3, plugin4 } from '../utils/fixtures/plugins'
 import {
   destroyVault,
   getTestCommonWithVaultPathFlags,
   setupVault,
 } from '../utils/testing'
-import { Config, ConfigSchema, safeLoadConfig } from './config'
+import { ConfigSchema } from './config'
 import installService from './install'
 import pruneService from './prune'
 
@@ -26,26 +25,33 @@ describe('Command: prune', () => {
       vault.path,
     )
 
-    const vaults = await loadVaults(vault.path)
-    const selectedVaults = await vaultsSelector(vaults)
-    const { data: loadedConfig } = await safeLoadConfig(config.path)
-
-    const installResult = await installVaultIterator(
-      selectedVaults[0],
-      loadedConfig as Config,
-      { ...testCommonWithVaultPathFlags, enable: true },
-      false,
-    )
+    const installResult = await installVaultIterator({
+      vault,
+      config: {
+        ...config,
+        plugins: [plugin3, plugin4],
+      },
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
+      },
+    })
 
     expect(installResult.installedPlugins[0].id).to.be.equal(
-      loadedConfig?.plugins[0].id,
+      config?.plugins[0].id,
     )
 
     await modifyCommunityPlugins({ id: plugin3Id }, vault.path, 'disable')
 
-    const { prunedPlugins } = await pruneVaultIterator(selectedVaults[0], {
-      ...config,
-      plugins: [plugin4],
+    const { prunedPlugins } = await pruneVaultIterator({
+      vault,
+      config: {
+        ...config,
+        plugins: [plugin4],
+      },
+      flags: {
+        ...testCommonWithVaultPathFlags,
+      },
     })
 
     expect(prunedPlugins).to.have.lengthOf(1)
@@ -62,10 +68,18 @@ describe('Command: prune', () => {
       vault.path,
     )
 
-    const result = await pruneVaultIterator(
-      { ...testCommonWithVaultPathFlags, path: vault.path, name: vault.name },
-      { plugins: [plugin3] },
-    )
+    const result = await pruneVaultIterator({
+      vault,
+      config: {
+        ...config,
+        plugins: [plugin3],
+      },
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        path: vault.path,
+        name: vault.name,
+      },
+    })
 
     expect(result.prunedPlugins).to.have.lengthOf(0)
     destroyVault(vault.path)

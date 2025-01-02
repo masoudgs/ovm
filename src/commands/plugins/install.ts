@@ -1,6 +1,8 @@
 import { Args, Flags, flush } from '@oclif/core'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import installService from '../../services/install'
+import { FactoryFlagsWithVaults, InstallFlags } from '../../types/commands'
+import { flagsInterceptor } from '../../utils/command'
 
 const { action } = installService
 
@@ -42,7 +44,10 @@ export default class Install extends FactoryCommandWithVaults {
   public async run(): Promise<void> {
     try {
       const { args, flags } = await this.parse(Install)
-      return action(args, this.flagsInterceptor(flags))
+      return action(
+        args,
+        flagsInterceptor<FactoryFlagsWithVaults<InstallFlags>>(flags),
+      )
     } catch (error) {
       this.handleError(error)
       throw error

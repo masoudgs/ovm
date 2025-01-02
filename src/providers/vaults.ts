@@ -1,9 +1,8 @@
 import { checkbox } from '@inquirer/prompts'
-import { each, eachSeries, ErrorCallback } from 'async'
 import { glob } from 'glob'
 import { findVault, Vault } from 'obsidian-utils'
 import { basename, dirname } from 'path'
-import { CommonFlagsWithPath } from '../types/commands'
+import { Config } from '../services/config'
 import { isTestEnv } from '../utils/env'
 import { logger } from '../utils/logger'
 
@@ -30,8 +29,6 @@ export const findVaultsByPatternMatching = async (pathPattern: string) => {
 
   return detectedVaults
 }
-
-export const findVaultsFromConfig = findVault
 
 export const vaultsSelector = async (vaults: Vault[]) => {
   const choices = vaults
@@ -79,7 +76,7 @@ export const loadVaults = async (path: string): Promise<Vault[]> => {
   if (isPathSpecifiedAndValid) {
     vaults = await findVaultsByPatternMatching(path)
   } else {
-    vaults = await findVaultsFromConfig()
+    vaults = await findVault()
   }
 
   if (vaults.length === 0) {
@@ -89,16 +86,20 @@ export const loadVaults = async (path: string): Promise<Vault[]> => {
   return vaults
 }
 
-type GenericVaultIterator = (_vault: Vault) => void
-type GenericVaultCallback = ErrorCallback
-
-export const runOnVaults = (
+export const mapVaultsIteratorItem = <A, F>(
   vaults: Vault[],
-  flags: CommonFlagsWithPath,
-  iterator: GenericVaultIterator,
-  callback: GenericVaultCallback,
-) => {
-  const { async = false } = flags
-  const asyncFunction = async ? each : eachSeries
-  return asyncFunction(vaults, iterator, callback)
+  config: Config,
+  flags: F,
+  args: A = {} as A,
+) =>
+  vaults.map((vault) => ({
+    vault,
+    config,
+    flags,
+    args,
+  }))
+
+export const getSelectedVaults = async (path: string) => {
+  const vaults = await loadVaults(path)
+  return await vaultsSelector(vaults)
 }

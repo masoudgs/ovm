@@ -6,6 +6,8 @@ import path from 'path'
 import { pathToFileURL } from 'url'
 import { Config, ConfigSchema, createDefaultConfig } from '../services/config'
 import { OVM_CONFIG_FILENAME } from './constants'
+import { CUSTOM_COMMAND_LOGGER_FILE } from './logger'
+
 export const getTestConfigFilePath = (vaultPath: string) => {
   if (platform() === 'win32') {
     return path.win32.join(vaultPath, OVM_CONFIG_FILENAME)
@@ -45,14 +47,14 @@ export const setupVault = (overrideConfig?: Config) => {
     )
   }
 
-  createDefaultConfig(
+  const config = createDefaultConfig(
     configFilePath,
     overrideConfig ?? ConfigSchema.parse({ plugins: [] }),
   )
 
   return {
     vault: { name: vaultName, path: normalizedPath },
-    config: { path: configFilePath },
+    config: { ...config, ...{ path: configFilePath } },
   }
 }
 
@@ -69,6 +71,7 @@ export const getTestCommonWithVaultPathFlags = (
   timestamp: false,
   config: configFilePath,
   path: vaultPath,
+  output: 'json',
 })
 
 export const destroyVault = (vaultPath: string) => {
@@ -76,6 +79,12 @@ export const destroyVault = (vaultPath: string) => {
 
   if (normalizedPath && existsSync(normalizedPath)) {
     fse.emptyDirSync(normalizedPath)
-    fsp.rmdir(normalizedPath, { recursive: true })
+    fsp.rmdir(normalizedPath)
+  }
+
+  const customLogsPath = path.normalize(CUSTOM_COMMAND_LOGGER_FILE)
+
+  if (customLogsPath && existsSync(customLogsPath)) {
+    fse.rmSync(customLogsPath, { force: true })
   }
 }

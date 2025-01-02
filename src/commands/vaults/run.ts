@@ -1,6 +1,8 @@
 import { Args, Flags, flush } from '@oclif/core'
 import { FactoryCommandWithVaults } from '../../providers/command'
 import runService from '../../services/run'
+import { FactoryFlagsWithVaults, RunFlags } from '../../types/commands'
+import { flagsInterceptor } from '../../utils/command'
 
 const { action } = runService
 
@@ -13,7 +15,7 @@ export default class Run extends FactoryCommandWithVaults {
     '<%= config.bin %> <%= command.id %> --path=/path/to/vaults/**/.obsidian --output=json --unescape=false',
     '<%= config.bin %> <%= command.id %> --output=json --async=false',
     '<%= config.bin %> <%= command.id %> --output=json --silent=true',
-    '<%= config.bin %> <%= command.id %> --output=json --runFromVaultDirectoryAsWorkDir=false',
+    '<%= config.bin %> <%= command.id %> --output=json --cwd=/path/to/vaults',
   ]
   static override readonly flags = {
     output: Flags.string({
@@ -38,10 +40,10 @@ export default class Run extends FactoryCommandWithVaults {
       description: 'Silent on results of the custom command on vault(s).',
       default: false,
     }),
-    runFromVaultDirectoryAsWorkDir: Flags.boolean({
-      char: 'r',
-      description: 'Run the command from the vault directory as working dir.',
-      default: true,
+    cwd: Flags.string({
+      char: 'w',
+      description:
+        '[default: vault path] Set working directory for custom command.',
     }),
     ...this.commonFlagsWithPath,
   }
@@ -51,6 +53,7 @@ export default class Run extends FactoryCommandWithVaults {
       description:
         'Command to run and use specified vaults with each execution.',
       required: true,
+      default: '',
     }),
   }
 
@@ -64,7 +67,10 @@ export default class Run extends FactoryCommandWithVaults {
   public async run(): Promise<void> {
     try {
       const { args, flags } = await this.parse(Run)
-      await action(args, this.flagsInterceptor(flags))
+      await action(
+        args,
+        flagsInterceptor<FactoryFlagsWithVaults<RunFlags>>(flags),
+      )
     } catch (error) {
       this.handleError(error)
     } finally {

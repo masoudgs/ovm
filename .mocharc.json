@@ -7,5 +7,13 @@
   "watch-files": ["src"],
   "watch-extensions": ["ts"],
   "ui": "bdd",
-  "spec": ["src/**/*.test.ts"]
+  "spec": [
+    "src/**/config.test.ts",
+    "src/**/install.test.ts",
+    "src/**/uninstall.test.ts",
+    "src/**/prune.test.ts",
+    "src/**/run.test.ts",
+    "src/**/stats.test.ts",
+    "src/**/command.test.ts"
+  ]
 }

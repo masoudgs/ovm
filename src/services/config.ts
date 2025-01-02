@@ -43,8 +43,8 @@ type SafeLoadConfigResult =
 
 export const safeLoadConfig = (
   configPath: string,
-): Promise<SafeLoadConfigResult> => {
-  return new Promise((resolve) => {
+): Promise<SafeLoadConfigResult> =>
+  new Promise((resolve) => {
     try {
       const config = readFileSync(configPath)
       const { success, data, error } = stringToJSONSchema
@@ -75,6 +75,20 @@ export const safeLoadConfig = (
       return resolve({ success: false, data: undefined, error: typedError })
     }
   })
+
+export const loadConfig = async (configPath: string) => {
+  const {
+    success: loadConfigSuccess,
+    data: config,
+    error: loadConfigError,
+  } = await safeLoadConfig(configPath)
+
+  if (!loadConfigSuccess) {
+    logger.error('Failed to load config', { error: loadConfigError })
+    process.exit(1)
+  }
+
+  return config
 }
 
 export const writeConfig = (config: Config, path: string): void => {

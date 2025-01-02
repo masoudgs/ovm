@@ -1,21 +1,14 @@
 import { Command, Flags } from '@oclif/core'
-import { ParserInput } from '@oclif/core/lib/interfaces/parser'
 import { exec } from 'child_process'
 import { Vault } from 'obsidian-utils'
 import { homedir } from 'os'
 import path from 'path'
-import {
-  ExecuteCustomCommandResult,
-  FactoryFlags,
-  FactoryFlagsWithVaults,
-} from '../types/commands'
 import { handlerCommandError } from '../utils/command'
 import {
   OVM_CONFIG_FILENAME,
   RESERVED_VARIABLES,
   VAULTS_PATH_FLAG_DESCRIPTION,
 } from '../utils/constants'
-import { logger } from '../utils/logger'
 
 const DEFAULT_CONFIG_PATH = path.join(homedir(), OVM_CONFIG_FILENAME)
 
@@ -45,33 +38,6 @@ class FactoryCommand extends Command {
     throw new Error('Method not implemented.')
   }
 
-  public enableLoggingTimestamp(timestamp: boolean): void {
-    process.env.OVM_ENABLE_LOG_TIMESTAMP = timestamp ? '0' : '1'
-  }
-
-  public enableDebugLogLevel(
-    debug: boolean,
-    flags: ParserInput['flags'],
-  ): void {
-    if (debug) {
-      logger.level = 'debug'
-      logger.debug(`Command called`, { flags })
-    }
-  }
-
-  public flagsInterceptor<T>(flags: FactoryFlags<T>): FactoryFlags<T> {
-    const { debug, timestamp } = flags
-
-    this.enableLoggingTimestamp(timestamp)
-
-    if (debug) {
-      logger.level = 'debug'
-      logger.debug(`Command called`, { flags })
-    }
-
-    return flags
-  }
-
   public handleError(error: unknown) {
     handlerCommandError(error)
   }
@@ -91,31 +57,6 @@ class FactoryCommandWithVaults extends Command {
 
   run(): Promise<unknown> {
     throw new Error('Method not implemented.')
-  }
-
-  public enableLoggingTimestamp(timestamp: boolean): void {
-    process.env.OVM_ENABLE_LOG_TIMESTAMP = timestamp ? '0' : '1'
-  }
-
-  public enableDebugLogLevel(
-    debug: boolean,
-    flags: ParserInput['flags'],
-  ): void {
-    if (debug) {
-      logger.level = 'debug'
-      logger.debug(`Command called`, { flags })
-    }
-  }
-
-  public flagsInterceptor<T>(
-    flags: FactoryFlagsWithVaults<T>,
-  ): FactoryFlagsWithVaults<T> {
-    const { debug, timestamp } = flags
-
-    this.enableLoggingTimestamp(timestamp)
-    this.enableDebugLogLevel(debug, flags as ParserInput['flags'])
-
-    return flags
   }
 
   public handleError(error: unknown) {
@@ -140,14 +81,14 @@ const commandInterpolation = (vault: Vault, command: string): string => {
 }
 
 const asyncExecCustomCommand = async (
-  command: string,
-  runFromVaultDirectoryAsWorkDir: boolean,
   vault: Vault,
-): Promise<Pick<ExecuteCustomCommandResult, 'error'> | string> => {
-  return new Promise((resolve, reject) => {
+  command: string,
+  cwd: string,
+): Promise<string> =>
+  new Promise((resolve, reject) => {
     exec(
       commandInterpolation(vault, command),
-      { cwd: runFromVaultDirectoryAsWorkDir ? vault.path : __dirname },
+      { cwd },
       (error, stdout, stderr) => {
         if (error) {
           reject(error)
@@ -156,7 +97,6 @@ const asyncExecCustomCommand = async (
       },
     )
   })
-}
 
 export {
   asyncExecCustomCommand,
