@@ -1,3 +1,4 @@
+import fetchIntercept from 'fetch-intercept'
 import { existsSync } from 'fs'
 import fse from 'fs-extra'
 import fsp from 'fs/promises'
@@ -6,6 +7,8 @@ import path from 'path'
 import { pathToFileURL } from 'url'
 import { Config, ConfigSchema, createDefaultConfig } from '../services/config'
 import { OVM_CONFIG_FILENAME } from './constants'
+import { CUSTOM_COMMAND_LOGGER_FILE } from './logger'
+
 export const getTestConfigFilePath = (vaultPath: string) => {
   if (platform() === 'win32') {
     return path.win32.join(vaultPath, OVM_CONFIG_FILENAME)
@@ -79,4 +82,45 @@ export const destroyVault = (vaultPath: string) => {
     fse.emptyDirSync(normalizedPath)
     fsp.rmdir(normalizedPath, { recursive: true })
   }
+
+  const customLogsPath = path.normalize(CUSTOM_COMMAND_LOGGER_FILE)
+
+  if (customLogsPath && existsSync(customLogsPath)) {
+    fse.rmSync(customLogsPath, { force: true })
+  }
+}
+
+export const patchNodeFetchForGithub = () => {
+  const unregister = fetchIntercept.register({
+    request: (url, config) => {
+      console.log('url', url)
+      if (url.contains('github.com')) {
+        config.headers = {
+          ...config.headers,
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          // 'X-GitHub-Api-Version': '2022-11-28'
+        }
+
+        console.log('[url, config]', [url, config])
+        return [url, config]
+      }
+
+      return [url, config]
+    },
+
+    requestError: (error: Error) => {
+      return Promise.reject(error)
+    },
+
+    response: (response) => {
+      return response
+    },
+
+    responseError: (error: Error) => {
+      return Promise.reject(error)
+    },
+  })
+
+  return unregister
 }

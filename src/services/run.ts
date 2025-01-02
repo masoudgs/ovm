@@ -147,7 +147,7 @@ const action = async (
   const items = mapVaultsIteratorItem<
     RunArgs,
     FactoryFlagsWithVaults<RunFlags>
-  >(selectedVaults, config, args, flags)
+  >(selectedVaults, config, flags, args)
 
   const commandVaultCallback = (error: CustomError | null | undefined) => {
     const result: RunCommandCallbackResult = {

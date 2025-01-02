@@ -111,7 +111,7 @@ export interface ExecuteCustomCommandCallbackResult {
 
 export type StatsCommandVaultIteratorItem = CommandVaultIteratorItem & {
   flags: FactoryFlagsWithVaults<StatsFlags>
-  args: StatsArgs
+  args?: StatsArgs
 }
 
 export type StatsCommandIteratorResult = {
@@ -154,7 +154,7 @@ export interface InstallCommandIteratorResult {
 
 export type InstallCommandVaultIteratorItem = CommandVaultIteratorItem & {
   flags: FactoryFlagsWithVaults<InstallFlags>
-  args: InstallArgs
+  args?: InstallArgs
 }
 
 export type InstallCommandIterator = (
@@ -182,7 +182,7 @@ export interface PruneCommandIteratorResult {
 
 export type PruneCommandVaultIteratorItem = CommandVaultIteratorItem & {
   flags: FactoryFlagsWithVaults<PruneFlags>
-  args: PruneArgs
+  args?: PruneArgs
 }
 
 export type PruneCommandIterator = (
@@ -208,7 +208,7 @@ export interface UninstallCommandIteratorResult {
 
 export type UninstallCommandVaultIteratorItem = CommandVaultIteratorItem & {
   flags: FactoryFlagsWithVaults<UninstallFlags>
-  args: UninstallArgs
+  args?: UninstallArgs
 }
 
 export type UninstallCommandIterator = (
@@ -231,7 +231,7 @@ export interface CommandVaultIteratorItem {
 
 export type RunCommandVaultIteratorItem = CommandVaultIteratorItem & {
   flags: FactoryFlagsWithVaults<RunFlags>
-  args: RunArgs
+  args?: RunArgs
 }
 
 export type RunCommandIteratorResult = CommandsExecutedOnVaults[0]

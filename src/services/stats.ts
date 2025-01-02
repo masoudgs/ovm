@@ -89,7 +89,7 @@ const action = async (
   const items = mapVaultsIteratorItem<
     StatsArgs,
     FactoryFlagsWithVaults<StatsFlags>
-  >(selectedVaults, config, args, flags)
+  >(selectedVaults, config, flags, args)
 
   const statsVaultCallback = (error: Error | null | undefined) => {
     const result: StatsCommandCallbackResult = {

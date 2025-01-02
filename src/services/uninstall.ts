@@ -22,7 +22,9 @@ import { safeLoadConfig } from './config'
 const uninstallVaultIterator: UninstallCommandIterator = async (item) => {
   const { vault, config, flags, args } = item
   // Check if pluginId is provided and install only that plugin
-  const stagedPlugins = args.pluginId ? [{ id: args.pluginId }] : config.plugins
+  const stagedPlugins = args?.pluginId
+    ? [{ id: args.pluginId }]
+    : config.plugins
   const uninstalledPlugins: Plugin[] = []
   const failedPlugins: Plugin[] = []
   const result = { uninstalledPlugins, failedPlugins }
@@ -89,7 +91,7 @@ const action = async (
   const items = mapVaultsIteratorItem<
     UninstallArgs,
     FactoryFlagsWithVaults<UninstallFlags>
-  >(selectedVaults, configWithPlugins, args, flags)
+  >(selectedVaults, configWithPlugins, flags, args)
 
   const uninstallCommandCallback: UninstallCommandCallback = (error) => {
     const result: UninstallCommandCallbackResult = {

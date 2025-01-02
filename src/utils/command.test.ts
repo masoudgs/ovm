@@ -2,12 +2,17 @@ import { expect } from 'chai'
 import { describe } from 'mocha'
 import sinon from 'sinon'
 import { handlerCommandError } from './command'
+import { isTestEnv } from './env'
 
 const sandbox = sinon.createSandbox()
 
 describe('Command: Handle errors', () => {
   afterEach(() => {
     sandbox.restore()
+  })
+
+  it('should detect a test environment', async () => {
+    expect(isTestEnv()).to.be.true
   })
 
   it('should throw error if CI env is true', async () => {

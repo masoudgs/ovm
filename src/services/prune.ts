@@ -70,7 +70,7 @@ const action = async (
   const items = mapVaultsIteratorItem<
     PruneArgs,
     FactoryFlagsWithVaults<PruneFlags>
-  >(selectedVaults, config, args, flags)
+  >(selectedVaults, config, flags, args)
 
   const pruneCommandCallback: PruneCommandCallback = (error) => {
     const result: PruneCommandCallbackResult = {

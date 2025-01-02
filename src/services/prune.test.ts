@@ -37,7 +37,6 @@ describe('Command: prune', () => {
         ...testCommonWithVaultPathFlags,
         enable: true,
       },
-      args: {},
     })
 
     expect(installResult.installedPlugins[0].id).to.be.equal(
@@ -55,7 +54,6 @@ describe('Command: prune', () => {
       flags: {
         ...testCommonWithVaultPathFlags,
       },
-      args: {},
     })
 
     expect(prunedPlugins).to.have.lengthOf(1)
@@ -83,7 +81,6 @@ describe('Command: prune', () => {
         path: vault.path,
         name: vault.name,
       },
-      args: {},
     })
 
     expect(result.prunedPlugins).to.have.lengthOf(0)

@@ -63,4 +63,42 @@ describe('Command: install', () => {
 
     destroyVault(vault.path)
   })
+
+  it('should not install plugin if it is already installed', async () => {
+    const { vault, config } = setupVault(
+      ConfigSchema.parse({ plugins: [plugin5] }),
+    )
+    const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
+      config.path,
+      vault.path,
+    )
+
+    const result = await installVaultIterator({
+      vault,
+      config,
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
+      },
+    })
+
+    expect(result.installedPlugins.length).to.equal(1)
+    expect(result.failedPlugins.length).to.equal(0)
+    expect(result.reinstallPlugins.length).to.equal(0)
+
+    const resultSecondAttempt = await installVaultIterator({
+      vault,
+      config,
+      flags: {
+        ...testCommonWithVaultPathFlags,
+        enable: true,
+      },
+    })
+
+    expect(resultSecondAttempt.installedPlugins.length).to.equal(0)
+    expect(resultSecondAttempt.failedPlugins.length).to.equal(0)
+    expect(resultSecondAttempt.reinstallPlugins[0].id).to.equal(plugin5.id)
+
+    destroyVault(vault.path)
+  })
 })

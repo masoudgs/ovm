@@ -33,7 +33,6 @@ describe('Command: uninstall', () => {
         ...testCommonWithVaultPathFlags,
         enable: true,
       },
-      args: {},
     })
 
     expect(installResult.installedPlugins[0].id).to.be.equal(
@@ -49,7 +48,6 @@ describe('Command: uninstall', () => {
       flags: {
         ...testCommonWithVaultPathFlags,
       },
-      args: {},
     })
 
     expect(result.uninstalledPlugins.some(({ id }) => id === plugin1Id)).to.be
@@ -70,7 +68,6 @@ describe('Command: uninstall', () => {
       vault,
       config,
       flags: getTestCommonWithVaultPathFlags(config.path, vault.path),
-      args: {},
     })
 
     expect(result.uninstalledPlugins.length).to.equal(0)
@@ -95,7 +92,6 @@ describe('Command: uninstall', () => {
         ...testCommonWithVaultPathFlags,
         enable: true,
       },
-      args: {},
     })
 
     expect(installResult.installedPlugins[0].id).to.be.equal(

@@ -27,7 +27,9 @@ import { safeLoadConfig, writeConfig } from './config'
 const installVaultIterator: InstallCommandIterator = async (item) => {
   const { vault, config, flags, args } = item
   // Check if pluginId is provided and install only that plugin
-  const stagedPlugins = args.pluginId ? [{ id: args.pluginId }] : config.plugins
+  const stagedPlugins = args?.pluginId
+    ? [{ id: args.pluginId }]
+    : config.plugins
   const installedPlugins: StagedPlugins = []
   const failedPlugins: StagedPlugins = []
   const reinstallPlugins: StagedPlugins = []
@@ -61,29 +63,28 @@ const installVaultIterator: InstallCommandIterator = async (item) => {
 
       await installPluginFromGithub(pluginInRegistry.repo, version, vault.path)
 
-      installedPlugins.push({
-        ...stagePlugin,
-        repo: pluginInRegistry.repo,
-        version,
-      })
-
       if (flags.enable) {
         await modifyCommunityPlugins(stagePlugin, vault.path, 'enable')
       }
 
       const updatedPlugins = new Set([...config.plugins, stagePlugin])
       const updatedConfig = { ...config, plugins: [...updatedPlugins] }
+
       writeConfig(updatedConfig, flags.config)
+
+      installedPlugins.push({
+        ...stagePlugin,
+        repo: pluginInRegistry.repo,
+        version,
+      })
     } catch (error) {
       const failedPlugin = {
         ...stagePlugin,
         repo: pluginInRegistry?.repo,
         version,
       }
+
       result.failedPlugins.push(failedPlugin)
-      result.installedPlugins = installedPlugins.filter(
-        (plugin) => plugin.repo !== failedPlugin.repo,
-      )
       handleExceedRateLimitError(error)
       childLogger.error(`Failed to install plugin`, { error })
     }
@@ -122,7 +123,7 @@ const action = async (
   const items = mapVaultsIteratorItem<
     InstallArgs,
     FactoryFlagsWithVaults<InstallFlags>
-  >(selectedVaults, config, args, flags)
+  >(selectedVaults, config, flags, args)
 
   const installCommandCallback: InstallCommandCallback = (error) => {
     const result: ReturnType<InstallCommandCallback> = { success: false, error }
