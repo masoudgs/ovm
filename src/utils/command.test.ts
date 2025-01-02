@@ -18,7 +18,7 @@ describe('Command: Handle errors', () => {
   it('should throw error if CI env is true', async () => {
     process.env.CI = 'true'
     const error = new Error()
-    expect(() => handlerCommandError(error)).to.throw()
+    expect(() => handlerCommandError(error)).to.throw(error)
     process.env.CI = undefined
   })
 })
