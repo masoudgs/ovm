@@ -2,7 +2,6 @@ import NodeFetchCache, { FileSystemCache } from 'node-fetch-cache'
 import { GitHubPluginVersion } from 'obsidian-utils'
 import { Plugin } from '../services/config'
 
-// const interceptor = new ClientRequestInterceptor()
 const fetch = NodeFetchCache.create({
   cache: new FileSystemCache({
     cacheDirectory: './cache',
