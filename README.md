@@ -20,4 +20,4 @@ You can checkout the detailed documentation for OVM:
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [GPL-3.0-only License](LICENSE).
