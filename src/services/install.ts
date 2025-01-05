@@ -74,7 +74,7 @@ const installVaultIterator: InstallCommandIterator = async (item) => {
 
       const updatedConfig = { ...config, plugins: [...updatedPlugins] }
 
-      writeConfig(updatedConfig, flags.config)
+      await writeConfig(updatedConfig, flags.config)
 
       installedPlugins.push({
         ...stagePlugin,

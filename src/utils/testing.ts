@@ -24,7 +24,7 @@ export const destroyConfigMockFile = (path: string) => {
   }
 }
 
-export const setupVault = (overrideConfig?: Config) => {
+export const setupVault = async (overrideConfig?: Config) => {
   const vaultName = `ovm-test-vault-${Date.now()}`
   const vaultPath = path.join(tmpdir(), vaultName)
   const configFilePath = path.join(vaultPath, OVM_CONFIG_FILENAME)
@@ -47,7 +47,7 @@ export const setupVault = (overrideConfig?: Config) => {
     )
   }
 
-  const config = createDefaultConfig(
+  const config = await createDefaultConfig(
     configFilePath,
     overrideConfig ?? ConfigSchema.parse({ plugins: [] }),
   )

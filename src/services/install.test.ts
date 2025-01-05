@@ -26,7 +26,7 @@ describe('Command: install', () => {
   })
 
   it('should perform installation successfully', async () => {
-    const { vault, config } = setupVault(
+    const { vault, config } = await setupVault(
       ConfigSchema.parse({ plugins: [plugin5] }),
     )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
@@ -53,7 +53,7 @@ describe('Command: install', () => {
 
   it('should throw PluginNotFoundInRegistryError when plugin is not found based on testing installVaultIterator', async () => {
     const pluginId = 'nonExistentPluginId'
-    const { vault, config } = setupVault(
+    const { vault, config } = await setupVault(
       ConfigSchema.parse({ plugins: [{ id: pluginId }] }),
     )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
@@ -79,7 +79,7 @@ describe('Command: install', () => {
   })
 
   it('should not install plugin if it is already installed', async () => {
-    const { vault, config } = setupVault(
+    const { vault, config } = await setupVault(
       ConfigSchema.parse({ plugins: [plugin5] }),
     )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
@@ -117,7 +117,7 @@ describe('Command: install', () => {
   })
 
   it('should handle API rate limit error', async () => {
-    const { vault, config } = setupVault(
+    const { vault, config } = await setupVault(
       ConfigSchema.parse({ plugins: [plugin5] }),
     )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
@@ -157,7 +157,7 @@ describe('Command: install', () => {
   })
 
   it('should not handle any error as rate limit error', async () => {
-    const { vault, config } = setupVault(
+    const { vault, config } = await setupVault(
       ConfigSchema.parse({ plugins: [plugin5] }),
     )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(

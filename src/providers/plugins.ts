@@ -1,5 +1,12 @@
 import { checkbox } from '@inquirer/prompts'
-import { access, constants, readFile, rm, writeFile } from 'fs/promises'
+import {
+  access,
+  constants,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from 'fs/promises'
 import { vaultPathToPluginsPath } from 'obsidian-utils'
 import { Plugin } from '../services/config'
 import { logger } from '../utils/logger'
@@ -18,23 +25,18 @@ export const removePluginDir = async (pluginId: string, vaultPath: string) => {
 }
 
 export const listInstalledPlugins = async (vaultPath: string) => {
-  const pluginPath = vaultPathToPluginsPath(vaultPath)
-  let plugins: string[] = []
+  const pluginsPath = vaultPathToPluginsPath(vaultPath)
+  let installedPlugins: Array<Pick<Plugin, 'id'>> = []
 
-  try {
-    await access(pluginPath, constants.R_OK)
-  } catch (error) {
-    const typedError = error as Error & { code: string }
-    if (typedError.code === 'EISDIR') {
-      plugins = JSON.parse((await readFile(pluginPath)).toString()) as string[]
-      // Do nothing, the directory exists
-    } else {
-      logger.error('Listing installed plugins failed', { error: typedError })
-      return plugins
-    }
-  }
+  await access(pluginsPath, constants.R_OK)
 
-  return plugins.map((plugin) => ({ id: plugin }))
+  const existingDirs = await readdir(pluginsPath)
+
+  installedPlugins = existingDirs.map((plugin) => ({
+    id: plugin,
+  }))
+
+  return installedPlugins
 }
 
 export const pluginsSelector = async (plugins: Plugin[]) => {

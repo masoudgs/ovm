@@ -15,7 +15,9 @@ const { statsVaultIterator } = statsService
 
 describe('Command: stats', () => {
   it('should display stats for vaults and 0 plugins', async () => {
-    const { vault, config } = setupVault(ConfigSchema.parse({ plugins: [] }))
+    const { vault, config } = await setupVault(
+      ConfigSchema.parse({ plugins: [] }),
+    )
     const installedPlugins = {}
     const result = await statsVaultIterator({
       vault,
@@ -30,7 +32,9 @@ describe('Command: stats', () => {
   })
 
   it('should display stats for vaults and 1 plugin', async () => {
-    const { vault, config } = setupVault(ConfigSchema.parse({ plugins: [] }))
+    const { vault, config } = await setupVault(
+      ConfigSchema.parse({ plugins: [] }),
+    )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
       config.path,
       vault.path,
@@ -71,7 +75,9 @@ describe('Command: stats', () => {
   })
 
   it('should not display stats for a plugin dir which does not exist', async () => {
-    const { vault, config } = setupVault(ConfigSchema.parse({ plugins: [] }))
+    const { vault, config } = await setupVault(
+      ConfigSchema.parse({ plugins: [] }),
+    )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
       config.path,
       vault.path,

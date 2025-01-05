@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs'
+import { readFile, writeFile } from 'fs/promises'
 import { GitHubPluginVersion } from 'obsidian-utils'
 import z from 'zod'
 import { logger } from '../utils/logger'
@@ -41,40 +41,39 @@ type SafeLoadConfigResult =
     } & SafeLoadConfigResultSuccess)
   | SafeLoadConfigResultError
 
-export const safeLoadConfig = (
+export const safeLoadConfig = async (
   configPath: string,
-): Promise<SafeLoadConfigResult> =>
-  new Promise((resolve) => {
-    try {
-      const config = readFileSync(configPath)
-      const { success, data, error } = stringToJSONSchema
-        .pipe(ConfigSchema)
-        .safeParse(config.toString())
+): Promise<SafeLoadConfigResult> => {
+  try {
+    const config = await readFile(configPath)
+    const { success, data, error } = stringToJSONSchema
+      .pipe(ConfigSchema)
+      .safeParse(config.toString())
 
-      if (!success) {
-        logger.debug('Schema validation failed', { error })
+    if (!success) {
+      logger.debug('Schema validation failed', { error })
 
-        return resolve({
-          success,
-          data,
-          error: new Error('Invalid config file'),
-        })
+      return {
+        success,
+        data,
+        error: new Error('Invalid config file'),
       }
-
-      return resolve({ success, data, error: undefined })
-    } catch (error) {
-      const typedError = error as Error
-      if (typedError.message.includes('ENOENT')) {
-        return resolve({
-          success: false,
-          data: undefined,
-          error: new Error('Config file not found'),
-        })
-      }
-
-      return resolve({ success: false, data: undefined, error: typedError })
     }
-  })
+
+    return { success, data, error: undefined }
+  } catch (error) {
+    const typedError = error as Error
+    if (typedError.message.includes('ENOENT')) {
+      return {
+        success: false,
+        data: undefined,
+        error: new Error('Config file not found'),
+      }
+    }
+
+    return { success: false, data: undefined, error: typedError }
+  }
+}
 
 export const loadConfig = async (configPath: string) => {
   const {
@@ -91,20 +90,26 @@ export const loadConfig = async (configPath: string) => {
   return config
 }
 
-export const writeConfig = (config: Config, path: string): void => {
+export const writeConfig = async (
+  config: Config,
+  path: string,
+): Promise<void> => {
   logger.debug('Writing config', { path })
 
   const content = JSON.stringify(config, null, 2)
 
-  writeFileSync(path, content)
+  await writeFile(path, content)
 
   logger.debug('Config written', { path })
 }
 
-export const createDefaultConfig = (path: string, opts?: Config): Config => {
+export const createDefaultConfig = async (
+  path: string,
+  opts?: Config,
+): Promise<Config> => {
   const defaultConfig = opts ?? ConfigSchema.parse({})
 
-  writeConfig(defaultConfig, path)
+  await writeConfig(defaultConfig, path)
 
   logger.info('Config file created', { path })
 

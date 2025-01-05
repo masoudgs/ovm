@@ -20,7 +20,7 @@ describe('Command: run', () => {
   })
 
   it('should fail with invalid command', async () => {
-    const { vault, config } = setupVault()
+    const { vault, config } = await setupVault()
     const result = await runCommandVaultIterator({
       vault,
       config,
@@ -39,7 +39,7 @@ describe('Command: run', () => {
   })
 
   it('should echo path and name of vault by echo command and reserved placeholder {0} {1}', async () => {
-    const { vault, config } = setupVault()
+    const { vault, config } = await setupVault()
     const result = await runCommandVaultIterator({
       vault,
       config,
@@ -57,7 +57,7 @@ describe('Command: run', () => {
   })
 
   it('should echo path and name of vault by echo command and reserved placeholder {0} {1} and not {10000}', async () => {
-    const { vault, config } = setupVault()
+    const { vault, config } = await setupVault()
     const result = await runCommandVaultIterator({
       vault,
       config,
@@ -86,7 +86,7 @@ describe('Command: run', () => {
         asyncExecCustomCommand: asyncExecCustomCommandStub,
       },
     })
-    const { vault, config } = setupVault()
+    const { vault, config } = await setupVault()
     const result = await (runCommandVaultIterator as RunCommandIterator)({
       vault,
       config,
@@ -105,7 +105,7 @@ describe('Command: run', () => {
   })
 
   it('should not run command from vault directory', async () => {
-    const { vault, config } = setupVault()
+    const { vault, config } = await setupVault()
     const result = await runCommandVaultIterator({
       vault,
       config,
@@ -123,7 +123,7 @@ describe('Command: run', () => {
   })
 
   it('should run command from vault directory', async () => {
-    const { vault, config } = setupVault()
+    const { vault, config } = await setupVault()
     const result = await runCommandVaultIterator({
       vault,
       config,

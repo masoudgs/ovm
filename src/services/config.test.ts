@@ -9,7 +9,7 @@ import { ConfigSchema, safeLoadConfig } from './config'
 describe('Config', () => {
   it('should load config from path', async () => {
     const sampleDefaultConfig = ConfigSchema.parse({ plugins: [] })
-    const { vault, config } = setupVault(sampleDefaultConfig)
+    const { vault, config } = await setupVault(sampleDefaultConfig)
     const loadedConfig = await safeLoadConfig(config.path)
 
     expect(loadedConfig.success).to.be.true.equal(true)
@@ -48,7 +48,7 @@ describe('Config', () => {
   })
 
   it('should throw an error if the config file is invalid', async () => {
-    const { vault, config } = setupVault({
+    const { vault, config } = await setupVault({
       // @ts-expect-error To create an invalid config
       invalidKey: 'invalidValue',
     })
