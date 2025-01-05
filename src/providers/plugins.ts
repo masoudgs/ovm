@@ -1,6 +1,5 @@
 import { checkbox } from '@inquirer/prompts'
-import fse from 'fs-extra'
-import { readdir, readFile, rm, writeFile } from 'fs/promises'
+import { access, constants, readFile, rm, writeFile } from 'fs/promises'
 import { vaultPathToPluginsPath } from 'obsidian-utils'
 import { Plugin } from '../services/config'
 import { logger } from '../utils/logger'
@@ -21,12 +20,16 @@ export const removePluginDir = async (pluginId: string, vaultPath: string) => {
 export const listInstalledPlugins = async (vaultPath: string) => {
   const pluginPath = vaultPathToPluginsPath(vaultPath)
 
-  if (!(await fse.exists(pluginPath))) {
+  try {
+    await access(pluginPath, constants.R_OK)
+    const plugins = JSON.parse(
+      (await readFile(pluginPath)).toString(),
+    ) as string[]
+    return plugins.map((plugin) => ({ id: plugin }))
+  } catch (error) {
+    logger.error('Error listing installed plugins', { error })
     return []
   }
-
-  const plugins = await readdir(pluginPath)
-  return plugins.map((plugin) => ({ id: plugin }))
 }
 
 export const pluginsSelector = async (plugins: Plugin[]) => {
@@ -61,11 +64,23 @@ export const modifyCommunityPlugins = async (
 
   const communityPluginsDir = `${vaultPath}/.obsidian/community-plugins.json`
 
-  const communityPluginsDirExists = await fse.exists(communityPluginsDir)
+  try {
+    await access(communityPluginsDir, constants.W_OK)
+  } catch (error) {
+    const typedError = error as Error & { code: string }
 
-  if (!communityPluginsDirExists) {
-    await writeFile(communityPluginsDir, JSON.stringify([]))
-    return
+    if (typedError.code === 'ENOENT') {
+      const emptyPlugins: string[] = []
+      const content = JSON.stringify(emptyPlugins)
+
+      await writeFile(communityPluginsDir, content)
+
+      return emptyPlugins
+    } else if (typedError.code === 'EACCES') {
+      throw typedError
+    } else {
+      throw typedError
+    }
   }
 
   const content = await readFile(communityPluginsDir)
@@ -80,6 +95,8 @@ export const modifyCommunityPlugins = async (
   await writeFile(communityPluginsDir, JSON.stringify(plugins, null, 2))
 
   childLogger.debug(`Modify action performed`)
+
+  return plugins
 }
 
 export const deduplicatePlugins = (plugins: Plugin[], stagePlugin: Plugin) => {
