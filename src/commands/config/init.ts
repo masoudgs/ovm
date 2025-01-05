@@ -57,7 +57,7 @@ export const action = async (
   const { data: config, error } = await safeLoadConfig(configPath)
 
   if (error && error.message === 'Config file not found') {
-    const defaultConfig = createDefaultConfig(configPath)
+    const defaultConfig = await createDefaultConfig(configPath)
 
     if (callback) {
       callback(null)

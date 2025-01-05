@@ -41,7 +41,7 @@ const uninstallVaultIterator: UninstallCommandIterator = async (item) => {
       ])
       const updatedConfig = { ...config, plugins: [...updatedPlugins] }
 
-      writeConfig(updatedConfig, flags.config)
+      await writeConfig(updatedConfig, flags.config)
 
       childLogger.info(`Uninstalled plugin`)
       result.uninstalledPlugins.push(stagePlugin)

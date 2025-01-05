@@ -17,7 +17,7 @@ const [{ id: plugin3Id }] = [plugin3, plugin4]
 
 describe('Command: prune', () => {
   it('should prune plugins successfully', async () => {
-    const { vault, config } = setupVault(
+    const { vault, config } = await setupVault(
       ConfigSchema.parse({ plugins: [plugin3, plugin4] }),
     )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
@@ -41,6 +41,10 @@ describe('Command: prune', () => {
       config?.plugins[0].id,
     )
 
+    expect(installResult.installedPlugins[1].id).to.be.equal(
+      config?.plugins[1].id,
+    )
+
     await modifyCommunityPlugins({ id: plugin3Id }, vault.path, 'disable')
 
     const { prunedPlugins } = await pruneVaultIterator({
@@ -60,7 +64,7 @@ describe('Command: prune', () => {
   }).timeout(6000)
 
   it('should prune only if plugins directory exists', async () => {
-    const { vault, config } = setupVault(
+    const { vault, config } = await setupVault(
       ConfigSchema.parse({ plugins: [plugin3] }),
     )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
