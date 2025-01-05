@@ -56,7 +56,7 @@ export const pluginsSelector = async (plugins: Plugin[]) => {
 export const modifyCommunityPlugins = async (
   plugin: Plugin,
   vaultPath: string,
-  action: 'enable' | 'disable',
+  action: 'enable' | 'disable' = 'enable',
 ) => {
   const childLogger = logger.child({ plugin, vaultPath, action })
 
@@ -86,10 +86,11 @@ export const modifyCommunityPlugins = async (
   const content = await readFile(communityPluginsDir)
   let plugins = JSON.parse(content.toString()) as string[]
 
-  if (action === 'enable') {
-    plugins.push(plugin.id)
-  } else {
+  // By default, enable the plugin
+  if (action === 'disable') {
     plugins = plugins.filter((p) => p !== plugin.id)
+  } else {
+    plugins.push(plugin.id)
   }
 
   await writeFile(communityPluginsDir, JSON.stringify(plugins, null, 2))
