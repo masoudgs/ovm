@@ -27,19 +27,29 @@ export const listInstalledPlugins = async (vaultPath: string) => {
   const pluginsPath = vaultPathToPluginsPath(vaultPath)
   let installedPlugins: Array<Pick<Plugin, 'id'>> = []
 
-  await access(pluginsPath, constants.R_OK)
+  try {
+    await access(pluginsPath, constants.R_OK)
 
-  const entries = await readdir(pluginsPath, {
-    withFileTypes: true,
-  })
+    const entries = await readdir(pluginsPath, {
+      withFileTypes: true,
+    })
 
-  installedPlugins = entries
-    .filter(({ isDirectory }) => isDirectory())
-    .map((dir) => ({
-      id: dir.name,
-    }))
+    installedPlugins = entries
+      .filter((entry) => entry.isDirectory())
+      .map(({ name }) => ({
+        id: name,
+      }))
 
-  return installedPlugins
+    return installedPlugins
+  } catch (error) {
+    const typedError = error as Error & { code: string }
+
+    if (typedError.code === 'ENOENT') {
+      return installedPlugins
+    }
+
+    throw typedError
+  }
 }
 
 export const pluginsSelector = async (plugins: Plugin[]) => {
