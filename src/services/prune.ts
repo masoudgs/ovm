@@ -1,6 +1,10 @@
 import { ArgInput } from '@oclif/core/lib/parser'
 import { each } from 'async'
-import { listInstalledPlugins, removePluginDir } from '../providers/plugins'
+import {
+  listInstalledPlugins,
+  modifyCommunityPlugins,
+  removePluginDir,
+} from '../providers/plugins'
 import { getSelectedVaults, mapVaultsIteratorItem } from '../providers/vaults'
 import {
   FactoryFlagsWithVaults,
@@ -28,6 +32,7 @@ const pruneVaultIterator: PruneCommandIterator = async (item) => {
 
   for (const plugin of toBePruned) {
     await removePluginDir(plugin.id, vault.path)
+    await modifyCommunityPlugins({ id: plugin.id }, vault.path, 'disable')
   }
 
   childLogger.info(`Pruned ${toBePruned.length} plugins`, {

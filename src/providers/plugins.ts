@@ -19,7 +19,6 @@ export const removePluginDir = async (pluginId: string, vaultPath: string) => {
   childLogger.debug(`Remove plugin`)
 
   await rm(pluginDir, { recursive: true, force: true })
-  await modifyCommunityPlugins({ id: pluginId }, vaultPath, 'disable')
 
   childLogger.debug(`Removed plugin`)
 }
@@ -30,11 +29,15 @@ export const listInstalledPlugins = async (vaultPath: string) => {
 
   await access(pluginsPath, constants.R_OK)
 
-  const existingDirs = await readdir(pluginsPath)
+  const entries = await readdir(pluginsPath, {
+    withFileTypes: true,
+  })
 
-  installedPlugins = existingDirs.map((plugin) => ({
-    id: plugin,
-  }))
+  installedPlugins = entries
+    .filter(({ isDirectory }) => isDirectory())
+    .map((dir) => ({
+      id: dir.name,
+    }))
 
   return installedPlugins
 }
