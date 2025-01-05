@@ -1,6 +1,12 @@
 import { checkbox } from '@inquirer/prompts'
-import fse from 'fs-extra'
-import { readdir, readFile, rm, writeFile } from 'fs/promises'
+import {
+  access,
+  constants,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from 'fs/promises'
 import { vaultPathToPluginsPath } from 'obsidian-utils'
 import { Plugin } from '../services/config'
 import { logger } from '../utils/logger'
@@ -19,14 +25,18 @@ export const removePluginDir = async (pluginId: string, vaultPath: string) => {
 }
 
 export const listInstalledPlugins = async (vaultPath: string) => {
-  const pluginPath = vaultPathToPluginsPath(vaultPath)
+  const pluginsPath = vaultPathToPluginsPath(vaultPath)
+  let installedPlugins: Array<Pick<Plugin, 'id'>> = []
 
-  if (!(await fse.exists(pluginPath))) {
-    return []
-  }
+  await access(pluginsPath, constants.R_OK)
 
-  const plugins = await readdir(pluginPath)
-  return plugins.map((plugin) => ({ id: plugin }))
+  const existingDirs = await readdir(pluginsPath)
+
+  installedPlugins = existingDirs.map((plugin) => ({
+    id: plugin,
+  }))
+
+  return installedPlugins
 }
 
 export const pluginsSelector = async (plugins: Plugin[]) => {
@@ -53,7 +63,7 @@ export const pluginsSelector = async (plugins: Plugin[]) => {
 export const modifyCommunityPlugins = async (
   plugin: Plugin,
   vaultPath: string,
-  action: 'enable' | 'disable',
+  action: 'enable' | 'disable' = 'enable',
 ) => {
   const childLogger = logger.child({ plugin, vaultPath, action })
 
@@ -61,25 +71,38 @@ export const modifyCommunityPlugins = async (
 
   const communityPluginsDir = `${vaultPath}/.obsidian/community-plugins.json`
 
-  const communityPluginsDirExists = await fse.exists(communityPluginsDir)
+  try {
+    await access(communityPluginsDir, constants.W_OK)
+  } catch (error) {
+    const typedError = error as Error & { code: string }
 
-  if (!communityPluginsDirExists) {
-    await writeFile(communityPluginsDir, JSON.stringify([]))
-    return
+    if (typedError.code === 'ENOENT') {
+      const emptyPlugins: string[] = []
+      const content = JSON.stringify(emptyPlugins)
+
+      await writeFile(communityPluginsDir, content)
+
+      return emptyPlugins
+    } else {
+      throw typedError
+    }
   }
 
   const content = await readFile(communityPluginsDir)
   let plugins = JSON.parse(content.toString()) as string[]
 
-  if (action === 'enable') {
-    plugins.push(plugin.id)
-  } else {
+  // By default, enable the plugin
+  if (action === 'disable') {
     plugins = plugins.filter((p) => p !== plugin.id)
+  } else {
+    plugins.push(plugin.id)
   }
 
   await writeFile(communityPluginsDir, JSON.stringify(plugins, null, 2))
 
   childLogger.debug(`Modify action performed`)
+
+  return plugins
 }
 
 export const deduplicatePlugins = (plugins: Plugin[], stagePlugin: Plugin) => {

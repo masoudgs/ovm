@@ -26,7 +26,7 @@ describe('Command: uninstall', () => {
   })
 
   it('should perform uninstallation successfully', async () => {
-    const { config, vault } = setupVault(
+    const { config, vault } = await setupVault(
       ConfigSchema.parse({ plugins: [plugin1] }),
     )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
@@ -70,7 +70,7 @@ describe('Command: uninstall', () => {
   it('should fail when plugin not found', async () => {
     const pluginId = 'nonExistentPluginId'
 
-    const { vault, config } = setupVault(
+    const { vault, config } = await setupVault(
       ConfigSchema.parse({ plugins: [{ id: pluginId }] }),
     )
 
@@ -88,7 +88,7 @@ describe('Command: uninstall', () => {
 
   it('should uninstall only the specified plugin', async () => {
     const plugins = [plugin1, plugin2]
-    const { config, vault } = setupVault(ConfigSchema.parse({ plugins }))
+    const { config, vault } = await setupVault(ConfigSchema.parse({ plugins }))
 
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
       config.path,
@@ -129,7 +129,7 @@ describe('Command: uninstall', () => {
   })
 
   it('should count failed plugins when process encounter unhandled issue', async () => {
-    const { vault, config } = setupVault(
+    const { vault, config } = await setupVault(
       ConfigSchema.parse({ plugins: [plugin1, plugin2] }),
     )
     const testCommonWithVaultPathFlags = getTestCommonWithVaultPathFlags(
