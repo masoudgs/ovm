@@ -19,17 +19,22 @@ export const removePluginDir = async (pluginId: string, vaultPath: string) => {
 
 export const listInstalledPlugins = async (vaultPath: string) => {
   const pluginPath = vaultPathToPluginsPath(vaultPath)
+  let plugins: string[] = []
 
   try {
     await access(pluginPath, constants.R_OK)
-    const plugins = JSON.parse(
-      (await readFile(pluginPath)).toString(),
-    ) as string[]
-    return plugins.map((plugin) => ({ id: plugin }))
   } catch (error) {
-    logger.error('Error listing installed plugins', { error })
-    return []
+    const typedError = error as Error & { code: string }
+    if (typedError.code === 'EISDIR') {
+      plugins = JSON.parse((await readFile(pluginPath)).toString()) as string[]
+      // Do nothing, the directory exists
+    } else {
+      logger.error('Listing installed plugins failed', { error: typedError })
+      return plugins
+    }
   }
+
+  return plugins.map((plugin) => ({ id: plugin }))
 }
 
 export const pluginsSelector = async (plugins: Plugin[]) => {
@@ -76,8 +81,6 @@ export const modifyCommunityPlugins = async (
       await writeFile(communityPluginsDir, content)
 
       return emptyPlugins
-    } else if (typedError.code === 'EACCES') {
-      throw typedError
     } else {
       throw typedError
     }
