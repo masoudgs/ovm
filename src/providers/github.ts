@@ -1,10 +1,16 @@
 import NodeFetchCache, { FileSystemCache } from 'node-fetch-cache'
 import { GitHubPluginVersion } from 'obsidian-utils'
+import { platform, tmpdir } from 'os'
 import { Plugin } from '../services/config'
+
+const cacheDirectory =
+  platform() === 'win32'
+    ? `${tmpdir()}\\.cache\\obsidian-utils`
+    : `${tmpdir()}/.cache/obsidian-utils`
 
 const fetch = NodeFetchCache.create({
   cache: new FileSystemCache({
-    cacheDirectory: './cache',
+    cacheDirectory,
     ttl: 3600,
   }),
   calculateCacheKey: (url, options) => {
