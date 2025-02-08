@@ -1,6 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/mocharc.json",
-  "require": "tsx",
+  "require": ["ts-node/register/transpile-only", "source-map-support/register"],
+  "recursive": true,
   "reporter": "tap",
   "timeout": 5000,
   "forbidOnly": true,
@@ -8,7 +9,7 @@
   "watch-extensions": ["ts"],
   "ui": "bdd",
   "spec": [
-    "src/**/config.test.ts",
+    "src/**/*.test.ts",
     "src/**/install.test.ts",
     "src/**/uninstall.test.ts",
     "src/**/prune.test.ts",

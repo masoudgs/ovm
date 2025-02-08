@@ -6,15 +6,14 @@
   "extensions": [".ts"],
   "reporter": ["text", "html", "lcov"],
   "exclude": [
-    "eslint.config.cjs",
-    "coverage/**",
-    "dist/**",
-    "node_modules/**",
-    "bin/**",
-    "**/test/**",
-    "**/*.test.ts",
-    "src/utils/testing.ts",
+    "bin",
+    "dist",
+    "node_modules",
     "src/commands",
-    "**/*.d.ts"
+    "src/utils/testing.ts",
+    "**/*.test.ts",
+    "**/*.d.ts",
+    "coverage",
+    "eslint.config.cjs"
   ]
 }
