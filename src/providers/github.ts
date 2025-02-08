@@ -13,7 +13,7 @@ const fetch = NodeFetchCache.create({
     cacheDirectory,
     ttl: 3600,
   }),
-  calculateCacheKey: (url, options) => {
+  calculateCacheKey: async (url, options) => {
     return JSON.stringify([options?.method, url])
   },
   shouldCacheResponse: (response) => response.ok,
