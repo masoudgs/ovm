@@ -67,7 +67,7 @@
     "@inquirer/core": "10.1.6",
     "@inquirer/prompts": "7.3.1",
     "@oclif/core": "4.2.6",
-    "@oclif/plugin-help": "6.2.24",
+    "@oclif/plugin-help": "6.2.27",
     "async": "3.2.6",
     "date-fns": "4.1.0",
     "fast-folder-size": "2.4.0",
